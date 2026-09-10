@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.conda/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Experiment outputs
+results/tables/*.csv
+results/plots/*.png
+results/plots/*.pdf
+wandb/
+
+# Data (too large for git, download via script)
+data/raw/
+data/processed/
+
+# Model checkpoints
+checkpoints/
+*.pt
+*.pth
+
+# Config overrides
+outputs/
+multirun/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

@@ -1,0 +1,44 @@
+# ============================================================
+# Hybrid QFL under Non-IID Client Data
+# Requirements — install with: pip install -r requirements.txt
+# ============================================================
+
+# Quantum ML
+pennylane>=0.38.0
+pennylane-qiskit>=0.35.0       # optional: Qiskit backend / circuit viz
+
+# Classical ML + Deep Learning
+torch>=2.2.0
+torchvision>=0.17.0
+torchaudio>=2.2.0
+
+# Federated Learning
+flwr>=1.8.0                    # Flower framework for FL simulation
+
+# Datasets
+medmnist>=3.0.0                # MedMNIST benchmark datasets
+numpy>=1.26.0
+pandas>=2.2.0
+
+# Experiment Tracking
+wandb>=0.17.0                  # Weights & Biases
+
+# Config Management
+hydra-core>=1.3.0
+omegaconf>=2.3.0
+
+# Visualization
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# Utilities
+tqdm>=4.66.0
+scikit-learn>=1.4.0            # metrics, confusion matrix
+scipy>=1.12.0                  # Dirichlet distribution
+
+# Notebook
+jupyter>=1.0.0
+ipykernel>=6.29.0
+
+# Code quality
+black>=24.0.0

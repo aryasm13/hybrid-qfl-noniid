@@ -1,0 +1,27 @@
+name: hybrid-qfl
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    - pennylane>=0.38.0
+    - pennylane-qiskit>=0.35.0
+    - torch>=2.2.0
+    - torchvision>=0.17.0
+    - flwr>=1.8.0
+    - medmnist>=3.0.0
+    - numpy>=1.26.0
+    - pandas>=2.2.0
+    - wandb>=0.17.0
+    - hydra-core>=1.3.0
+    - omegaconf>=2.3.0
+    - matplotlib>=3.8.0
+    - seaborn>=0.13.0
+    - tqdm>=4.66.0
+    - scikit-learn>=1.4.0
+    - scipy>=1.12.0
+    - jupyter>=1.0.0
+    - ipykernel>=6.29.0
+    - black>=24.0.0
