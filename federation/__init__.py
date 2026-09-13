@@ -1,1 +1,3 @@
-# Week 4 — federation strategies (FedAvg, WeightedAgg, QuantumFedProx) coming after models are done
+from .fedavg import train_one_round, aggregate_fedavg
+
+__all__ = ["train_one_round", "aggregate_fedavg"]
