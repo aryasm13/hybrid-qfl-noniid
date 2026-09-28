@@ -1,93 +1,89 @@
-# Hybrid Quantum-Classical Federated Learning under Non-IID Client Data
+# Hybrid Quantum-Classical Federated Learning under Non-IID Client Data Distributions
 
-An empirical study comparing Federated Learning strategies on heterogeneous (non-IID) client data using a Hybrid Quantum-Classical Neural Network.
+## Overview
 
-**Review 1 Status: Classical FL baseline running. Data pipeline complete. Hybrid QNN next.**
+This repository presents an empirical study of non-IID data heterogeneity in Hybrid Quantum-Classical Federated Learning (QFL). We investigate how skewed client data distributions degrade model performance when local models are Hybrid Quantum Neural Networks (Hybrid QNNs), and evaluate two mitigation strategies that have not been previously assessed in the QFL setting.
 
----
-
-## The Research Problem
-
-Federated Learning (FL) lets multiple clients train a shared model without sharing raw data — privacy preserved. But it assumes client data is uniform (IID). In reality, clients have very different data distributions. This is the **non-IID problem** and it causes accuracy to drop sharply.
-
-This problem is well-studied in classical FL. In **Quantum Federated Learning (QFL)**, it has only been proven theoretically (Zhao et al., 2023) but never empirically benchmarked with mitigation strategies. That is our gap.
-
-We implement a **Hybrid QNN** — classical CNN feature extractor feeding a Variational Quantum Circuit (VQC) — inside a federated setup, and compare three strategies to handle non-IID data.
+The research gap addressed: Zhao et al. (2023) proved theoretically that non-IID client distributions cause weight divergence in QFL. No prior work has empirically benchmarked mitigation strategies (proximal regularization, distribution-aware aggregation) under controlled heterogeneity in a hybrid QFL system. This work fills that gap.
 
 ---
 
-## What's Implemented
+## Research Contributions
 
-### Data Pipeline
-| File | What it does |
+1. **Empirical benchmark** of non-IID degradation in Hybrid QFL across three data heterogeneity conditions (IID, Dirichlet label-skew at α=0.5 and α=0.1) and three client scales (10, 20, 50).
+
+2. **Quantum FedProx** — a novel adaptation of FedProx (Li et al., 2020) that applies the proximal drift penalty specifically to variational quantum circuit (VQC) parameters, preventing quantum gate angles from diverging under heterogeneous client distributions.
+
+3. **Distribution-aware weighted aggregation** — server-side aggregation that weights client contributions by both data volume and Shannon entropy of each client's label distribution, reducing the influence of severely skewed clients.
+
+4. **Systematic EMD analysis** — application of the Earth Mover's Distance proxy (Zhao et al., 2023) as an experimental metric to quantify non-IID level across all partition configurations.
+
+---
+
+## System Architecture
+
+**Classical feature extraction → Quantum encoding → VQC → Classification**
+
+Each client's local model is a Hybrid QNN:
+- **Feature extractor:** 2-layer CNN (Conv2d 1→8→16, MaxPool, compressing 28×28 image to a 4-dimensional latent vector)
+- **Quantum encoding:** Angle embedding — each of the 4 features maps to a qubit rotation angle via `tanh(x) × π`
+- **Variational Quantum Circuit:** 4 qubits, 2 StronglyEntanglingLayers (24 trainable quantum parameters), Pauli-Z expectation measurement
+- **Classification head:** Linear(4 → 10) over PauliZ expectation values
+
+**Federation strategies compared:**
+
+| Strategy | Description |
 |---|---|
-| `data/iid_partition.py` | Splits data uniformly across clients — control condition |
-| `data/label_skew.py` | Dirichlet(α) partition — lower α = more skewed client data |
-| `data/quantity_skew.py` | Log-normal volume split — unequal sample counts per client |
-| `data/utils.py` | Fashion-MNIST loader, label extraction, stacked-bar visualization |
-
-EMD proxy (Earth Mover's Distance) computed per partition to quantify non-IID level.
-
-### Classical Baseline (done)
-| File | What it does |
-|---|---|
-| `models/classical_cnn.py` | 2-layer CNN — 105,866 parameters, benchmarks against quantum model |
-| `federation/fedavg.py` | FedAvg — local training + weighted global aggregation |
-| `evaluation/classical_metrics.py` | Test loss + accuracy per round |
-| `experiments/run_classical_baseline.py` | End-to-end runner, logs CSV to `results/tables/` |
-
-### Baseline Results (3 rounds, 10 clients, Fashion-MNIST)
-
-| Partition | α | Round 1 | Round 2 | Round 3 |
-|---|---|---|---|---|
-| IID | — | 74.69% | 81.31% | **84.57%** |
-| Dirichlet label-skew | 0.5 | 71.59% | 80.93% | **83.48%** |
-| Dirichlet label-skew | 0.1 | 44.27% | 58.58% | **72.22%** |
-
-The 12% accuracy gap between IID and α=0.1 is the non-IID degradation we are solving.
+| FedAvg (Classical) | Standard weighted averaging on classical CNN |
+| QFL FedAvg | FedAvg applied to Hybrid QNN parameters |
+| Quantum FedProx | FedAvg + proximal penalty on VQC parameters during local training |
+| Weighted Aggregation | Aggregation weighted by data volume × label distribution entropy |
 
 ---
 
-## What's Coming Next
+## Baseline Results (Classical FedAvg, 10 clients, 3 rounds, Fashion-MNIST)
 
-### Hybrid QNN (in progress)
-- `models/vqc_ansatz.py` — PennyLane VQC: angle embedding + strongly entangling layers
-- `models/hybrid_qnn.py` — CNN feature extractor → VQC → classification head
+| Data Partition | Heterogeneity | EMD Proxy | Accuracy |
+|---|---|---|---|
+| IID | Control | 0.037 | **84.57%** |
+| Dirichlet α=0.5 | Moderate | 1.18 | **83.48%** |
+| Dirichlet α=0.1 | Severe | 1.71 | **72.22%** |
 
-### Mitigation Strategies
-- `federation/weighted_aggregation.py` — weight clients by data size + class balance entropy
-- `federation/quantum_fedprox.py` — proximal penalty on VQC parameter drift
-
-### Full Experiment Grid
-```
-Strategies:   [Classical FedAvg, QFL FedAvg, Weighted Agg, Quantum FedProx]
-Partitions:   [IID, Dirichlet α=0.5, Dirichlet α=0.1, Quantity-skew]
-Clients:      [10, 20, 50]
-Rounds:       [50]
-```
+Non-IID accuracy degradation (IID → α=0.1): **−12.35 percentage points**
 
 ---
 
-## Directory Structure
+## Repository Structure
 
 ```
 hybrid-qfl-noniid/
-├── data/                    ← done: all 3 partitioners + Fashion-MNIST loader
-│   ├── utils.py
-│   ├── iid_partition.py
-│   ├── label_skew.py
-│   └── quantity_skew.py
-├── models/                  ← done: classical CNN | next: VQC + HybridQNN
-│   └── classical_cnn.py
-├── federation/              ← done: FedAvg | next: weighted agg + quantum FedProx
-│   └── fedavg.py
-├── evaluation/              ← done: loss + accuracy | next: macro F1 + circuit metrics
-│   └── classical_metrics.py
-├── experiments/             ← done: classical baseline runner
-│   └── run_classical_baseline.py
-├── results/tables/          ← CSV results from all runs
-├── Lit review/              ← 6 reference papers
-└── verify_setup.py          ← end-to-end Week 1 check (all passing)
+├── data/
+│   ├── utils.py                  — Dataset loading and partition visualization
+│   ├── iid_partition.py          — Uniform IID split (control condition)
+│   ├── label_skew.py             — Dirichlet label-skew partition + EMD proxy metric
+│   └── quantity_skew.py          — Log-normal quantity-skew partition
+├── models/
+│   ├── classical_cnn.py          — Classical CNN baseline (105,866 parameters)
+│   ├── vqc_ansatz.py             — PennyLane VQC: AngleEmbedding + StronglyEntanglingLayers
+│   └── hybrid_qnn.py             — Hybrid QNN: CNN extractor + VQC + classification head (26,574 params)
+├── federation/
+│   ├── fedavg.py                 — FedAvg: local training + weighted parameter aggregation
+│   ├── quantum_fedprox.py        — Quantum FedProx: proximal penalty on VQC parameters
+│   └── weighted_aggregation.py   — Entropy-weighted server-side aggregation
+├── evaluation/
+│   └── classical_metrics.py      — Test loss and accuracy evaluation
+├── experiments/
+│   ├── run_classical_baseline.py — Classical FL baseline experiment runner
+│   ├── run_qfl_fedavg.py         — QFL with standard FedAvg
+│   ├── run_fedprox.py            — QFL with Quantum FedProx
+│   └── run_weighted_agg.py       — QFL with distribution-aware weighted aggregation
+├── notebooks/
+│   └── plot_baseline.py          — Convergence curve and accuracy bar chart generation
+├── results/tables/               — CSV output from all experiment runs
+├── Lit review/                   — 6 reference papers (PDF)
+├── verify_setup.py               — End-to-end environment verification script
+├── requirements.txt
+└── environment.yml
 ```
 
 ---
@@ -98,49 +94,51 @@ hybrid-qfl-noniid/
 pip install -r requirements.txt
 ```
 
-Verify everything works:
+Verify environment and data pipeline:
 ```bash
 python verify_setup.py
 ```
 
 ---
 
-## Running the Classical Baseline
+## Running Experiments
 
 ```bash
-# IID (control)
+# Classical FL baseline
 python experiments/run_classical_baseline.py --partition iid --rounds 5
-
-# Non-IID moderate skew
 python experiments/run_classical_baseline.py --partition dirichlet --alpha 0.5 --rounds 5
-
-# Non-IID high skew
 python experiments/run_classical_baseline.py --partition dirichlet --alpha 0.1 --rounds 5
 
-# Quantity skew
-python experiments/run_classical_baseline.py --partition quantity --rounds 5
+# QFL with FedAvg
+python experiments/run_qfl_fedavg.py --partition dirichlet --alpha 0.1 --rounds 5
+
+# Quantum FedProx
+python experiments/run_fedprox.py --partition dirichlet --alpha 0.1 --rounds 5 --mu 0.01
+
+# Weighted aggregation
+python experiments/run_weighted_agg.py --partition dirichlet --alpha 0.1 --rounds 5 --lam 0.5
 ```
+
+Results are saved to `results/tables/` as CSV files.
 
 ---
 
-## Commit History
+## Key References
 
-```
-70f9103  feat(experiments): classical FL baseline runner with IID and non-IID results
-c783184  feat(federation): FedAvg aggregation and evaluation metrics
-4395d73  feat(models): add classical CNN baseline
-d175ed6  updated readme, added module placeholders and verify script
-c788bcd  feat(data): implement iid, dirichlet label-skew, and quantity-skew partitioners
-b681b09  feat(env): add dependencies and environment configuration
-```
+- McMahan et al. (2017). Communication-Efficient Learning of Deep Networks from Decentralized Data. *AISTATS*.
+- Li et al. (2020). Federated Optimization in Heterogeneous Networks (FedProx). *MLSys*.
+- Huang et al. (2022). Quantum Federated Learning with Decentralized Data. *Quantum Machine Intelligence*.
+- Zhao et al. (2023). Non-IID Quantum Federated Learning with One-Shot Communication Complexity. *Quantum Machine Intelligence*.
+- Chehimi & Saad (2022). Quantum Federated Learning with Quantum Data. *Quantum Machine Intelligence*.
 
 ---
 
 ## Team
 
-- **Arya Mulay** — Quantum FedProx, evaluation metrics, experiment runner
-- **Nakul Thombare** — Data pipeline, Hybrid QNN architecture, FedAvg
-- **Keshav Sukhija** — Huang 2022 reproduction, weighted aggregation, paper writing
-- **Faculty:** Dr. Aswani Kumar Cherukuri (C-FAIR, VIT)
-- **Reviewer:** Prasenjit Roy (Asst. Prof, School of Advanced Sciences, VIT)
-- **Frameworks:** PennyLane 0.45, PyTorch 2.14, Flower 1.36
+- Arya Mulay
+- Nakul Thombare
+- Keshav Sukhija
+
+**Faculty Supervisor:** Dr. Aswani Kumar Cherukuri, Professor & Director, C-FAIR, VIT Vellore
+
+**Frameworks:** PennyLane 0.45 · PyTorch 2.14 · Flower 1.36
