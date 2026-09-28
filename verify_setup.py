@@ -18,9 +18,9 @@ def check(label, fn):
         return None
 
 
-print("\n=== Week 1 Verification ===\n")
+print("\n=== Environment Verification ===\n")
 
-print("--- Imports ---")
+print("[imports]")
 check("pennylane",   lambda: __import__("pennylane"))
 check("torch",       lambda: __import__("torch"))
 check("flwr",        lambda: __import__("flwr"))
@@ -33,13 +33,13 @@ try:
 except Exception:
     pass
 
-print("\n--- Dataset Download ---")
+print("\n[dataset]")
 from data.utils import load_dataset, visualize_partition
 
 train = check("FashionMNIST train", lambda: load_dataset("fashionmnist")[0])
 test  = check("FashionMNIST test",  lambda: load_dataset("fashionmnist")[1])
 
-print("\n--- IID Partition ---")
+print("\n[iid partition]")
 from data.iid_partition import iid_partition
 
 iid = check("IID partition (10 clients)", lambda: iid_partition(train, n_clients=10))
@@ -48,7 +48,7 @@ if iid:
     all_idx = [i for lst in iid.values() for i in lst]
     check("IID: no duplicate indices",   lambda: None if len(all_idx) == len(set(all_idx)) else (_ for _ in ()).throw(AssertionError()))
 
-print("\n--- Dirichlet Label-Skew Partition ---")
+print("\n[dirichlet partition]")
 from data.label_skew import dirichlet_partition, compute_emd_proxy
 
 dir_05 = check("Dirichlet alpha=0.5", lambda: dirichlet_partition(train, n_clients=10, alpha=0.5))
@@ -62,12 +62,12 @@ if dir_05 and dir_01:
     if emd_iid is not None and emd_01 is not None:
         check("EMD: alpha=0.1 > IID", lambda: None if emd_01 > emd_iid else (_ for _ in ()).throw(AssertionError(f"{emd_01:.4f} should > {emd_iid:.4f}")))
 
-print("\n--- Quantity Skew Partition ---")
+print("\n[quantity skew partition]")
 from data.quantity_skew import quantity_skew_partition
 
 qty = check("Quantity skew sigma=1.0", lambda: quantity_skew_partition(train, n_clients=10, sigma=1.0))
 
-print("\n--- Visualization ---")
+print("\n[visualization]")
 if dir_05:
     check(
         "Partition plot saved",
@@ -79,4 +79,4 @@ if errors:
     print(f"[!] {len(errors)} check(s) failed: {errors}")
     sys.exit(1)
 else:
-    print("All Week 1 checks passed. Ready for Week 2.")
+    print("All checks passed.")

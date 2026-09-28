@@ -18,7 +18,6 @@ configs = {
 colors    = ["#2ecc71", "#f39c12", "#e74c3c"]
 linestyles = ["-", "--", ":"]
 
-# FIGURE 1: Accuracy convergence 
 fig, axes = plt.subplots(1, 2, figsize=(13, 5))
 fig.suptitle("Classical FL Baseline — IID vs Non-IID (Fashion-MNIST, 10 clients, FedAvg)",
              fontsize=13, fontweight="bold", y=1.01)
@@ -36,7 +35,6 @@ for (label, fname), color, ls in zip(configs.items(), colors, linestyles):
     ax_loss.plot(df["round"], df["loss"], label=label,
                  color=color, linestyle=ls, marker="s", linewidth=2, markersize=5)
 
-# accuracy subplot
 ax_acc.set_title("Test Accuracy per Round", fontsize=11)
 ax_acc.set_xlabel("Communication Round")
 ax_acc.set_ylabel("Accuracy (%)")
@@ -45,7 +43,6 @@ ax_acc.legend(fontsize=9)
 ax_acc.grid(True, linestyle="--", alpha=0.5)
 ax_acc.set_ylim(0, 100)
 
-# loss subplot
 ax_loss.set_title("Test Loss per Round", fontsize=11)
 ax_loss.set_xlabel("Communication Round")
 ax_loss.set_ylabel("Cross-Entropy Loss")
@@ -58,7 +55,6 @@ plt.savefig(out1, dpi=180, bbox_inches="tight")
 plt.show()
 print(f"Saved: {out1}")
 
-# FIGURE 2: Bar chart — accuracy at final round 
 labels_bar, accs_bar = [], []
 for label, fname in configs.items():
     path = os.path.join(TABLES_DIR, fname)
