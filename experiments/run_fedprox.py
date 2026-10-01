@@ -65,6 +65,7 @@ if __name__ == "__main__":
     parser.add_argument("--clients",      type=int,   default=10)
     parser.add_argument("--rounds",       type=int,   default=5)
     parser.add_argument("--epochs",       type=int,   default=1)
+    parser.add_argument("--batch_size",   type=int,   default=32)
     parser.add_argument("--lr",           type=float, default=0.001)
     parser.add_argument("--mu",           type=float, default=0.01)
     parser.add_argument("--quantum_only", action="store_true", default=True)
@@ -73,5 +74,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     run(num_clients=args.clients, rounds=args.rounds, local_epochs=args.epochs,
-        lr=args.lr, mu=args.mu, quantum_only=args.quantum_only,
+        batch_size=args.batch_size, lr=args.lr, mu=args.mu, quantum_only=args.quantum_only,
         partition=args.partition, alpha=args.alpha)

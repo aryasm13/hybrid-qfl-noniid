@@ -74,14 +74,16 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--clients",   type=int,   default=10)
-    parser.add_argument("--rounds",    type=int,   default=5)
-    parser.add_argument("--epochs",    type=int,   default=1)
-    parser.add_argument("--lr",        type=float, default=0.001)
-    parser.add_argument("--lam",       type=float, default=0.5)
-    parser.add_argument("--partition", type=str,   default="dirichlet", choices=["iid", "dirichlet", "quantity"])
-    parser.add_argument("--alpha",     type=float, default=0.5)
+    parser.add_argument("--clients",    type=int,   default=10)
+    parser.add_argument("--rounds",     type=int,   default=5)
+    parser.add_argument("--epochs",     type=int,   default=1)
+    parser.add_argument("--batch_size", type=int,   default=32)
+    parser.add_argument("--lr",         type=float, default=0.001)
+    parser.add_argument("--lam",        type=float, default=0.5)
+    parser.add_argument("--partition",  type=str,   default="dirichlet", choices=["iid", "dirichlet", "quantity"])
+    parser.add_argument("--alpha",      type=float, default=0.5)
     args = parser.parse_args()
 
     run(num_clients=args.clients, rounds=args.rounds, local_epochs=args.epochs,
-        lr=args.lr, lam=args.lam, partition=args.partition, alpha=args.alpha)
+        batch_size=args.batch_size, lr=args.lr, lam=args.lam,
+        partition=args.partition, alpha=args.alpha)
