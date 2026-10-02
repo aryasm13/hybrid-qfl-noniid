@@ -4,6 +4,7 @@ import copy
 import argparse
 import numpy as np
 import pandas as pd
+import torch
 from torch.utils.data import DataLoader, Subset
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -23,7 +24,7 @@ def get_label_distribution(dataset, indices, n_classes=10):
 
 
 def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
-        lam=0.5, partition="dirichlet", alpha=0.5, device="cpu"):
+        lam=0.5, partition="dirichlet", alpha=0.5, seed=42, device="cpu"):
 
     print(f"\n=== Weighted Aggregation | lam={lam} | partition={partition} | alpha={alpha} | clients={num_clients} ===\n")
 
@@ -31,11 +32,11 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
     test_loader = DataLoader(test_data, batch_size=128, shuffle=False)
 
     if partition == "iid":
-        client_indices = iid_partition(train_data, n_clients=num_clients)
+        client_indices = iid_partition(train_data, n_clients=num_clients, seed=seed)
     elif partition == "dirichlet":
-        client_indices = dirichlet_partition(train_data, n_clients=num_clients, alpha=alpha)
+        client_indices = dirichlet_partition(train_data, n_clients=num_clients, alpha=alpha, seed=seed)
     else:
-        client_indices = quantity_skew_partition(train_data, n_clients=num_clients)
+        client_indices = quantity_skew_partition(train_data, n_clients=num_clients, seed=seed)
 
     client_loaders = [
         DataLoader(Subset(train_data, client_indices[cid]), batch_size=batch_size, shuffle=True)
@@ -47,6 +48,7 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
         for cid in range(num_clients)
     ]
 
+    torch.manual_seed(seed)
     global_model = HybridQNN(in_channels=1, num_classes=10)
     print(f"Model parameters: {global_model.count_parameters():,}\n")
 
@@ -82,8 +84,9 @@ if __name__ == "__main__":
     parser.add_argument("--lam",        type=float, default=0.5)
     parser.add_argument("--partition",  type=str,   default="dirichlet", choices=["iid", "dirichlet", "quantity"])
     parser.add_argument("--alpha",      type=float, default=0.5)
+    parser.add_argument("--seed",       type=int,   default=42)
     args = parser.parse_args()
 
     run(num_clients=args.clients, rounds=args.rounds, local_epochs=args.epochs,
         batch_size=args.batch_size, lr=args.lr, lam=args.lam,
-        partition=args.partition, alpha=args.alpha)
+        partition=args.partition, alpha=args.alpha, seed=args.seed)
