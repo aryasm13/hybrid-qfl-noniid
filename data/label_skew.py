@@ -48,7 +48,7 @@ def dirichlet_partition(
 
 def compute_emd_proxy(client_indices: Dict[int, List[int]], dataset: Dataset) -> float:
     # Average pairwise L1 distance between client label distributions
-    # 0 = IID, ~1 = maximum skew. Used to quantify non-IID level (Zhao et al. 2023)
+    # 0 = IID, 2 = maximum skew. Used to quantify non-IID level (Zhao et al. 2023)
     labels = get_labels(dataset)
     classes = np.unique(labels)
     n_clients = len(client_indices)
@@ -67,5 +67,5 @@ def compute_emd_proxy(client_indices: Dict[int, List[int]], dataset: Dataset) ->
             count += 1
 
     emd = total / count if count > 0 else 0.0
-    print(f"[emd_proxy] {emd:.4f}  (0=IID, ~1=max skew)")
+    print(f"[emd_proxy] {emd:.4f}  (0=IID, 2=max skew)")
     return emd

@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, Subset
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from data import load_dataset, iid_partition, dirichlet_partition, quantity_skew_partition
+from data import load_dataset, iid_partition, dirichlet_partition, quantity_skew_partition, compute_emd_proxy
 from models import ClassicalCNN
 from federation import train_one_round, aggregate_fedavg
 from evaluation import evaluate
@@ -34,6 +34,7 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
         for cid in range(num_clients)
     ]
     sample_counts = [len(client_indices[cid]) for cid in range(num_clients)]
+    emd = compute_emd_proxy(client_indices, train_data)
 
     torch.manual_seed(seed)
     global_model = ClassicalCNN(in_channels=1, num_classes=10)
@@ -51,7 +52,7 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
         global_model.load_state_dict(aggregate_fedavg(client_weights, sample_counts))
         metrics = evaluate(global_model, test_loader, device=device)
         print(f"Round {r:02d}/{rounds} | loss={metrics['loss']:.4f} | acc={metrics['accuracy']:.4f}")
-        history.append({"round": r, **metrics})
+        history.append({"round": r, "emd": emd, **metrics})
 
     os.makedirs("results/tables", exist_ok=True)
     out = f"results/tables/classical_{partition}_a{alpha}_c{num_clients}.csv"
