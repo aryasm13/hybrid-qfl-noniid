@@ -57,7 +57,8 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
         history.append({"round": r, "mu": mu, "quantum_only": quantum_only, **metrics})
 
     os.makedirs("results/tables", exist_ok=True)
-    out = f"results/tables/qfl_fedprox_{partition}_a{alpha}_mu{mu}_c{num_clients}.csv"
+    name = "qfl_fedprox" if quantum_only else "qfl_fedprox_full"
+    out = f"results/tables/{name}_{partition}_a{alpha}_mu{mu}_c{num_clients}.csv"
     pd.DataFrame(history).to_csv(out, index=False)
     print(f"\nSaved to {out}")
 
@@ -70,12 +71,12 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size",   type=int,   default=32)
     parser.add_argument("--lr",           type=float, default=0.001)
     parser.add_argument("--mu",           type=float, default=0.01)
-    parser.add_argument("--quantum_only", action="store_true", default=True)
+    parser.add_argument("--full_prox",    action="store_true")
     parser.add_argument("--partition",    type=str,   default="dirichlet", choices=["iid", "dirichlet", "quantity"])
     parser.add_argument("--alpha",        type=float, default=0.5)
     parser.add_argument("--seed",         type=int,   default=42)
     args = parser.parse_args()
 
     run(num_clients=args.clients, rounds=args.rounds, local_epochs=args.epochs,
-        batch_size=args.batch_size, lr=args.lr, mu=args.mu, quantum_only=args.quantum_only,
+        batch_size=args.batch_size, lr=args.lr, mu=args.mu, quantum_only=not args.full_prox,
         partition=args.partition, alpha=args.alpha, seed=args.seed)
