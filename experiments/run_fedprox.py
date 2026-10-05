@@ -2,6 +2,7 @@ import os
 import sys
 import copy
 import argparse
+import time
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Subset
@@ -42,6 +43,7 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
 
     history = []
     for r in range(1, rounds + 1):
+        start = time.time()
         global_state = {k: v.clone() for k, v in global_model.state_dict().items()}
         client_weights = []
 
@@ -54,12 +56,14 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
 
         global_model.load_state_dict(aggregate_fedavg(client_weights, sample_counts))
         metrics = evaluate(global_model, test_loader, device=device)
-        print(f"Round {r:02d}/{rounds} | loss={metrics['loss']:.4f} | acc={metrics['accuracy']:.4f}")
-        history.append({"round": r, "mu": mu, "quantum_only": quantum_only, "emd": emd, **metrics})
+        elapsed = time.time() - start
+        print(f"Round {r:02d}/{rounds} | loss={metrics['loss']:.4f} | acc={metrics['accuracy']:.4f} | time={elapsed:.1f}s")
+        history.append({"round": r, "mu": mu, "quantum_only": quantum_only, "seed": seed,
+                        "emd": emd, **metrics, "time": round(elapsed, 1)})
 
     os.makedirs("results/tables", exist_ok=True)
     name = "qfl_fedprox" if quantum_only else "qfl_fedprox_full"
-    out = f"results/tables/{name}_{partition}_a{alpha}_mu{mu}_c{num_clients}.csv"
+    out = f"results/tables/{name}_{partition}_a{alpha}_mu{mu}_c{num_clients}_e{local_epochs}_lr{lr}_s{seed}.csv"
     pd.DataFrame(history).to_csv(out, index=False)
     print(f"\nSaved to {out}")
 

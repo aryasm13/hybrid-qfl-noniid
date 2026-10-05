@@ -2,6 +2,7 @@ import os
 import sys
 import copy
 import argparse
+import time
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Subset
@@ -42,6 +43,7 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
 
     history = []
     for r in range(1, rounds + 1):
+        start = time.time()
         client_weights = []
         for cid in range(num_clients):
             local_model = copy.deepcopy(global_model)
@@ -51,11 +53,12 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
 
         global_model.load_state_dict(aggregate_fedavg(client_weights, sample_counts))
         metrics = evaluate(global_model, test_loader, device=device)
-        print(f"Round {r:02d}/{rounds} | loss={metrics['loss']:.4f} | acc={metrics['accuracy']:.4f}")
-        history.append({"round": r, "emd": emd, **metrics})
+        elapsed = time.time() - start
+        print(f"Round {r:02d}/{rounds} | loss={metrics['loss']:.4f} | acc={metrics['accuracy']:.4f} | time={elapsed:.1f}s")
+        history.append({"round": r, "seed": seed, "emd": emd, **metrics, "time": round(elapsed, 1)})
 
     os.makedirs("results/tables", exist_ok=True)
-    out = f"results/tables/classical_{partition}_a{alpha}_c{num_clients}.csv"
+    out = f"results/tables/classical_{partition}_a{alpha}_c{num_clients}_e{local_epochs}_lr{lr}_s{seed}.csv"
     pd.DataFrame(history).to_csv(out, index=False)
     print(f"\nSaved to {out}")
 
