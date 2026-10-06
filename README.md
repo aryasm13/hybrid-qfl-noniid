@@ -78,7 +78,8 @@ hybrid-qfl-noniid/
 │   ├── run_fedprox.py            — QFL with Quantum FedProx
 │   └── run_weighted_agg.py       — QFL with distribution-aware weighted aggregation
 ├── notebooks/
-│   └── plot_baseline.py          — Convergence curve and accuracy bar chart generation
+│   ├── plot_baseline.ipynb       — Convergence curve and accuracy bar chart generation
+│   └── plot_results.ipynb        — Results tables and paper figures from all runs
 ├── results/tables/               — CSV output from all experiment runs
 ├── Lit review/                   — 6 reference papers (PDF)
 ├── verify_setup.py               — End-to-end environment verification script
