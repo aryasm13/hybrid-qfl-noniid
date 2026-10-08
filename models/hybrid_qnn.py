@@ -15,7 +15,7 @@ def class_codes(num_classes, dim=N_QUBITS):
 
 
 class HybridQNN(nn.Module):
-    def __init__(self, in_channels=1, num_classes=10, fixed_readout=False, scale=5.0):
+    def __init__(self, in_channels=1, num_classes=10, fixed_readout=False, twin=False, scale=5.0):
         super().__init__()
 
         # classical feature extractor: 28x28 -> 4 values
@@ -25,8 +25,11 @@ class HybridQNN(nn.Module):
         self.fc1   = nn.Linear(16 * 7 * 7, 32)
         self.fc2   = nn.Linear(32, N_QUBITS)
 
-        # quantum layer
-        self.vqc = get_vqc_layer()
+        # quantum layer (twin: a classical layer of the same width instead of the circuit)
+        if twin:
+            self.vqc = nn.Sequential(nn.Linear(N_QUBITS, N_QUBITS), nn.Tanh())
+        else:
+            self.vqc = get_vqc_layer()
 
         # classification head (fixed readout: frozen class observables, never trained)
         self.head = nn.Linear(N_QUBITS, num_classes)

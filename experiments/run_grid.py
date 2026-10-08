@@ -15,6 +15,7 @@ RUNNERS = {
     "classical":    "run_classical_baseline.py",
     "fco":          "run_qfl_fedavg.py",
     "logit_adjust": "run_logit_adjust.py",
+    "twin":         "run_qfl_fedavg.py",
 }
 
 
@@ -44,6 +45,9 @@ def build_job(strategy, split, seed, args):
     elif strategy == "logit_adjust":
         cmd += ["--tau", str(args.tau)]
         name = f"qfl_logitadj_{partition}_a{alpha}_tau{args.tau}_{tail}"
+    elif strategy == "twin":
+        cmd.append("--twin")
+        name = f"qfl_twin_{partition}_a{alpha}_{tail}"
     else:
         cmd += ["--mu", str(args.mu)]
         prefix = "qfl_fedprox"
