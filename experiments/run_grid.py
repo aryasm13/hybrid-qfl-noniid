@@ -13,6 +13,7 @@ RUNNERS = {
     "fedprox_full": "run_fedprox.py",
     "weighted":     "run_weighted_agg.py",
     "classical":    "run_classical_baseline.py",
+    "fco":          "run_qfl_fedavg.py",
 }
 
 
@@ -36,6 +37,9 @@ def build_job(strategy, split, seed, args):
     elif strategy == "weighted":
         cmd += ["--lam", str(args.lam)]
         name = f"qfl_weighted_{partition}_a{alpha}_lam{args.lam}_{tail}"
+    elif strategy == "fco":
+        cmd.append("--fixed_readout")
+        name = f"qfl_fco_{partition}_a{alpha}_{tail}"
     else:
         cmd += ["--mu", str(args.mu)]
         prefix = "qfl_fedprox"

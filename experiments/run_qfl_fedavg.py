@@ -16,9 +16,10 @@ from evaluation import evaluate
 
 
 def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
-        partition="dirichlet", alpha=0.5, seed=42, device="cpu"):
+        partition="dirichlet", alpha=0.5, seed=42, fixed_readout=False, device="cpu"):
 
-    print(f"\n=== QFL FedAvg | partition={partition} | alpha={alpha} | clients={num_clients} ===\n")
+    name = "qfl_fco" if fixed_readout else "qfl_fedavg"
+    print(f"\n=== QFL FedAvg | {name} | partition={partition} | alpha={alpha} | clients={num_clients} ===\n")
 
     train_data, test_data = load_dataset("fashionmnist")
     test_loader = DataLoader(test_data, batch_size=128, shuffle=False)
@@ -38,7 +39,7 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
     emd = compute_emd_proxy(client_indices, train_data)
 
     torch.manual_seed(seed)
-    global_model = HybridQNN(in_channels=1, num_classes=10)
+    global_model = HybridQNN(in_channels=1, num_classes=10, fixed_readout=fixed_readout)
     print(f"Model parameters: {global_model.count_parameters():,}\n")
 
     history = []
@@ -58,7 +59,7 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
         history.append({"round": r, "seed": seed, "emd": emd, **metrics, "time": round(elapsed, 1)})
 
     os.makedirs("results/tables", exist_ok=True)
-    out = f"results/tables/qfl_fedavg_{partition}_a{alpha}_c{num_clients}_e{local_epochs}_lr{lr}_s{seed}.csv"
+    out = f"results/tables/{name}_{partition}_a{alpha}_c{num_clients}_e{local_epochs}_lr{lr}_s{seed}.csv"
     pd.DataFrame(history).to_csv(out, index=False)
     print(f"\nSaved to {out}")
 
@@ -73,8 +74,10 @@ if __name__ == "__main__":
     parser.add_argument("--partition",  type=str,   default="dirichlet", choices=["iid", "dirichlet", "quantity"])
     parser.add_argument("--alpha",      type=float, default=0.5)
     parser.add_argument("--seed",       type=int,   default=42)
+    parser.add_argument("--fixed_readout", action="store_true")
     args = parser.parse_args()
 
     run(num_clients=args.clients, rounds=args.rounds, local_epochs=args.epochs,
         batch_size=args.batch_size, lr=args.lr,
-        partition=args.partition, alpha=args.alpha, seed=args.seed)
+        partition=args.partition, alpha=args.alpha, seed=args.seed,
+        fixed_readout=args.fixed_readout)

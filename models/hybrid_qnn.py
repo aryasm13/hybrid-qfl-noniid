@@ -1,11 +1,21 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .vqc_ansatz import get_vqc_layer, N_QUBITS
 
 
+def class_codes(num_classes, dim=N_QUBITS):
+    # corners of a regular simplex in `dim` dimensions plus their opposites, all unit length
+    simplex = np.eye(dim + 1) - 1 / (dim + 1)
+    basis = np.linalg.svd(simplex)[2][:dim]
+    corners = simplex @ basis.T
+    corners /= np.linalg.norm(corners, axis=1, keepdims=True)
+    return torch.tensor(np.vstack([corners, -corners])[:num_classes], dtype=torch.float32)
+
+
 class HybridQNN(nn.Module):
-    def __init__(self, in_channels=1, num_classes=10):
+    def __init__(self, in_channels=1, num_classes=10, fixed_readout=False, scale=5.0):
         super().__init__()
 
         # classical feature extractor: 28x28 -> 4 values
@@ -18,8 +28,13 @@ class HybridQNN(nn.Module):
         # quantum layer
         self.vqc = get_vqc_layer()
 
-        # classification head
+        # classification head (fixed readout: frozen class observables, never trained)
         self.head = nn.Linear(N_QUBITS, num_classes)
+        if fixed_readout:
+            with torch.no_grad():
+                self.head.weight.copy_(scale * class_codes(num_classes))
+                self.head.bias.zero_()
+            self.head.requires_grad_(False)
 
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
