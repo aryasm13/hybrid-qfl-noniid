@@ -14,6 +14,7 @@ RUNNERS = {
     "weighted":     "run_weighted_agg.py",
     "classical":    "run_classical_baseline.py",
     "fco":          "run_qfl_fedavg.py",
+    "logit_adjust": "run_logit_adjust.py",
 }
 
 
@@ -40,6 +41,9 @@ def build_job(strategy, split, seed, args):
     elif strategy == "fco":
         cmd.append("--fixed_readout")
         name = f"qfl_fco_{partition}_a{alpha}_{tail}"
+    elif strategy == "logit_adjust":
+        cmd += ["--tau", str(args.tau)]
+        name = f"qfl_logitadj_{partition}_a{alpha}_tau{args.tau}_{tail}"
     else:
         cmd += ["--mu", str(args.mu)]
         prefix = "qfl_fedprox"
@@ -90,6 +94,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr",         type=float, default=0.003)
     parser.add_argument("--mu",         type=float, default=0.01)
     parser.add_argument("--lam",        type=float, default=0.5)
+    parser.add_argument("--tau",        type=float, default=1.0)
     parser.add_argument("--workers",    type=int,   default=1)
     parser.add_argument("--threads",    type=int,   default=4)
     parser.add_argument("--dry_run",    action="store_true")
