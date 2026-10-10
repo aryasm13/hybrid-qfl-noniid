@@ -16,7 +16,7 @@ def class_codes(num_classes, dim=N_QUBITS):
 
 class HybridQNN(nn.Module):
     def __init__(self, in_channels=1, num_classes=10, fixed_readout=False, twin=False, scale=5.0,
-                 frozen_readout=False, pauli_readout=False):
+                 frozen_readout=False, pauli_readout=False, random_codes=False):
         super().__init__()
 
         # classical feature extractor: 28x28 -> 4 values
@@ -44,7 +44,15 @@ class HybridQNN(nn.Module):
             with torch.no_grad():
                 self.head.weight.copy_(scale * torch.eye(num_classes, n_readings))
                 self.head.bias.zero_()
-        if fixed_readout or frozen_readout or pauli_readout:
+        if random_codes:
+            # control for FCO: random unit-length codes at the same scale, drawn from the run's seed
+            # with their own generator so the data order stays the same as in the other variants
+            generator = torch.Generator().manual_seed(torch.initial_seed())
+            codes = torch.randn(num_classes, n_readings, generator=generator)
+            with torch.no_grad():
+                self.head.weight.copy_(scale * codes / codes.norm(dim=1, keepdim=True))
+                self.head.bias.zero_()
+        if fixed_readout or frozen_readout or pauli_readout or random_codes:
             self.head.requires_grad_(False)
 
     def forward(self, x):

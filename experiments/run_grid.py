@@ -22,6 +22,7 @@ RUNNERS = {
     "frozen":       "run_qfl_fedavg.py",
     "pauli":        "run_qfl_fedavg.py",
     "twin_fco":     "run_qfl_fedavg.py",
+    "randcode":     "run_qfl_fedavg.py",
 }
 
 
@@ -67,6 +68,9 @@ def build_job(strategy, split, seed, args):
     elif strategy == "twin_fco":
         cmd += ["--twin", "--fixed_readout"]
         name = f"qfl_twin_fco_{partition}_a{alpha}_{tail}"
+    elif strategy == "randcode":
+        cmd.append("--random_codes")
+        name = f"qfl_randcode_{partition}_a{alpha}_{tail}"
     else:
         cmd += ["--mu", str(args.mu)]
         prefix = "qfl_fedprox"

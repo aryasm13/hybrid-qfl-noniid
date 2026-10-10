@@ -17,7 +17,8 @@ from evaluation import evaluate, client_drift
 
 def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
         partition="dirichlet", alpha=0.5, seed=42, fixed_readout=False, twin=False,
-        frozen_readout=False, pauli_readout=False, dataset="fashionmnist", folder="", device="cpu"):
+        frozen_readout=False, pauli_readout=False, random_codes=False, dataset="fashionmnist", folder="",
+        device="cpu"):
 
     if twin:
         name = "qfl_twin_fco" if fixed_readout else "qfl_twin"
@@ -25,6 +26,8 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
         name = "qfl_pauli"
     elif frozen_readout:
         name = "qfl_frozen"
+    elif random_codes:
+        name = "qfl_randcode"
     else:
         name = "qfl_fco" if fixed_readout else "qfl_fedavg"
     print(f"\n=== QFL FedAvg | {name} | {dataset} | partition={partition} | alpha={alpha} | clients={num_clients} ===\n")
@@ -50,7 +53,8 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
     torch.manual_seed(seed)
     global_model = HybridQNN(in_channels=in_channels, num_classes=num_classes,
                              fixed_readout=fixed_readout, twin=twin,
-                             frozen_readout=frozen_readout, pauli_readout=pauli_readout)
+                             frozen_readout=frozen_readout, pauli_readout=pauli_readout,
+                             random_codes=random_codes)
     print(f"Model parameters: {global_model.count_parameters():,}\n")
 
     history = []
@@ -93,6 +97,7 @@ if __name__ == "__main__":
     parser.add_argument("--twin",          action="store_true")
     parser.add_argument("--frozen_readout", action="store_true")
     parser.add_argument("--pauli_readout",  action="store_true")
+    parser.add_argument("--random_codes",   action="store_true")
     args = parser.parse_args()
 
     run(num_clients=args.clients, rounds=args.rounds, local_epochs=args.epochs,
@@ -100,4 +105,4 @@ if __name__ == "__main__":
         partition=args.partition, alpha=args.alpha, seed=args.seed,
         fixed_readout=args.fixed_readout, twin=args.twin,
         frozen_readout=args.frozen_readout, pauli_readout=args.pauli_readout,
-        dataset=args.dataset, folder=args.folder)
+        random_codes=args.random_codes, dataset=args.dataset, folder=args.folder)
