@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from data import load_dataset, iid_partition, dirichlet_partition, quantity_skew_partition, get_labels, compute_emd_proxy
 from models import HybridQNN
 from federation import train_one_round, aggregate_weighted
-from evaluation import evaluate
+from evaluation import evaluate, client_drift
 
 
 def get_label_distribution(dataset, indices, n_classes=10):
@@ -64,13 +64,14 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
                                       epochs=local_epochs, lr=lr, device=device)
             client_weights.append(weights)
 
+        drift = client_drift(global_model.state_dict(), client_weights, sample_counts)
         global_model.load_state_dict(
             aggregate_weighted(client_weights, sample_counts, label_dists, lam=lam)
         )
         metrics = evaluate(global_model, test_loader, device=device)
         elapsed = time.time() - start
         print(f"Round {r:02d}/{rounds} | loss={metrics['loss']:.4f} | acc={metrics['accuracy']:.4f} | time={elapsed:.1f}s")
-        history.append({"round": r, "lam": lam, "seed": seed, "emd": emd, **metrics, "time": round(elapsed, 1)})
+        history.append({"round": r, "lam": lam, "seed": seed, "emd": emd, **metrics, **drift, "time": round(elapsed, 1)})
 
     os.makedirs("results/tables", exist_ok=True)
     out = f"results/tables/qfl_weighted_{partition}_a{alpha}_lam{lam}_c{num_clients}_e{local_epochs}_lr{lr}_s{seed}.csv"

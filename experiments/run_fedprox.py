@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from data import load_dataset, iid_partition, dirichlet_partition, quantity_skew_partition, compute_emd_proxy
 from models import HybridQNN
 from federation import train_fedprox, aggregate_fedavg
-from evaluation import evaluate
+from evaluation import evaluate, client_drift
 
 
 def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
@@ -54,12 +54,13 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
                                     quantum_only=quantum_only, device=device)
             client_weights.append(weights)
 
+        drift = client_drift(global_state, client_weights, sample_counts)
         global_model.load_state_dict(aggregate_fedavg(client_weights, sample_counts))
         metrics = evaluate(global_model, test_loader, device=device)
         elapsed = time.time() - start
         print(f"Round {r:02d}/{rounds} | loss={metrics['loss']:.4f} | acc={metrics['accuracy']:.4f} | time={elapsed:.1f}s")
         history.append({"round": r, "mu": mu, "quantum_only": quantum_only, "seed": seed,
-                        "emd": emd, **metrics, "time": round(elapsed, 1)})
+                        "emd": emd, **metrics, **drift, "time": round(elapsed, 1)})
 
     os.makedirs("results/tables", exist_ok=True)
     name = "qfl_fedprox" if quantum_only else "qfl_fedprox_full"

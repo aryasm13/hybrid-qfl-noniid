@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from data import load_dataset, iid_partition, dirichlet_partition, quantity_skew_partition, compute_emd_proxy
 from models import HybridQNN
 from federation import train_one_round, aggregate_fedavg
-from evaluation import evaluate
+from evaluation import evaluate, client_drift
 
 
 def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
@@ -61,11 +61,12 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
                                       epochs=local_epochs, lr=lr, device=device)
             client_weights.append(weights)
 
+        drift = client_drift(global_model.state_dict(), client_weights, sample_counts)
         global_model.load_state_dict(aggregate_fedavg(client_weights, sample_counts))
         metrics = evaluate(global_model, test_loader, device=device)
         elapsed = time.time() - start
         print(f"Round {r:02d}/{rounds} | loss={metrics['loss']:.4f} | acc={metrics['accuracy']:.4f} | time={elapsed:.1f}s")
-        history.append({"round": r, "seed": seed, "emd": emd, **metrics, "time": round(elapsed, 1)})
+        history.append({"round": r, "seed": seed, "emd": emd, **metrics, **drift, "time": round(elapsed, 1)})
 
     os.makedirs("results/tables", exist_ok=True)
     out = f"results/tables/{name}_{partition}_a{alpha}_c{num_clients}_e{local_epochs}_lr{lr}_s{seed}.csv"
