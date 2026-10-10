@@ -16,9 +16,17 @@ from evaluation import evaluate
 
 
 def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
-        partition="dirichlet", alpha=0.5, seed=42, fixed_readout=False, twin=False, device="cpu"):
+        partition="dirichlet", alpha=0.5, seed=42, fixed_readout=False, twin=False,
+        frozen_readout=False, pauli_readout=False, device="cpu"):
 
-    name = "qfl_twin" if twin else "qfl_fco" if fixed_readout else "qfl_fedavg"
+    if twin:
+        name = "qfl_twin_fco" if fixed_readout else "qfl_twin"
+    elif pauli_readout:
+        name = "qfl_pauli"
+    elif frozen_readout:
+        name = "qfl_frozen"
+    else:
+        name = "qfl_fco" if fixed_readout else "qfl_fedavg"
     print(f"\n=== QFL FedAvg | {name} | partition={partition} | alpha={alpha} | clients={num_clients} ===\n")
 
     train_data, test_data = load_dataset("fashionmnist")
@@ -39,7 +47,8 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
     emd = compute_emd_proxy(client_indices, train_data)
 
     torch.manual_seed(seed)
-    global_model = HybridQNN(in_channels=1, num_classes=10, fixed_readout=fixed_readout, twin=twin)
+    global_model = HybridQNN(in_channels=1, num_classes=10, fixed_readout=fixed_readout, twin=twin,
+                             frozen_readout=frozen_readout, pauli_readout=pauli_readout)
     print(f"Model parameters: {global_model.count_parameters():,}\n")
 
     history = []
@@ -76,9 +85,12 @@ if __name__ == "__main__":
     parser.add_argument("--seed",       type=int,   default=42)
     parser.add_argument("--fixed_readout", action="store_true")
     parser.add_argument("--twin",          action="store_true")
+    parser.add_argument("--frozen_readout", action="store_true")
+    parser.add_argument("--pauli_readout",  action="store_true")
     args = parser.parse_args()
 
     run(num_clients=args.clients, rounds=args.rounds, local_epochs=args.epochs,
         batch_size=args.batch_size, lr=args.lr,
         partition=args.partition, alpha=args.alpha, seed=args.seed,
-        fixed_readout=args.fixed_readout, twin=args.twin)
+        fixed_readout=args.fixed_readout, twin=args.twin,
+        frozen_readout=args.frozen_readout, pauli_readout=args.pauli_readout)

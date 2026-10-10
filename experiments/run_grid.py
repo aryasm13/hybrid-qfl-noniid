@@ -16,6 +16,9 @@ RUNNERS = {
     "fco":          "run_qfl_fedavg.py",
     "logit_adjust": "run_logit_adjust.py",
     "twin":         "run_qfl_fedavg.py",
+    "frozen":       "run_qfl_fedavg.py",
+    "pauli":        "run_qfl_fedavg.py",
+    "twin_fco":     "run_qfl_fedavg.py",
 }
 
 
@@ -48,6 +51,15 @@ def build_job(strategy, split, seed, args):
     elif strategy == "twin":
         cmd.append("--twin")
         name = f"qfl_twin_{partition}_a{alpha}_{tail}"
+    elif strategy == "frozen":
+        cmd.append("--frozen_readout")
+        name = f"qfl_frozen_{partition}_a{alpha}_{tail}"
+    elif strategy == "pauli":
+        cmd.append("--pauli_readout")
+        name = f"qfl_pauli_{partition}_a{alpha}_{tail}"
+    elif strategy == "twin_fco":
+        cmd += ["--twin", "--fixed_readout"]
+        name = f"qfl_twin_fco_{partition}_a{alpha}_{tail}"
     else:
         cmd += ["--mu", str(args.mu)]
         prefix = "qfl_fedprox"
