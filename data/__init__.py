@@ -1,10 +1,11 @@
-from .utils import load_dataset, get_labels, visualize_partition
+from .utils import load_dataset, get_labels, visualize_partition, DATASETS
 from .iid_partition import iid_partition
 from .label_skew import dirichlet_partition, compute_emd_proxy
 from .quantity_skew import quantity_skew_partition
 
 __all__ = [
     "load_dataset",
+    "DATASETS",
     "get_labels",
     "visualize_partition",
     "iid_partition",

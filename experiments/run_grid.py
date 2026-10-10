@@ -6,6 +6,9 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, ROOT)
+
+from data import load_dataset, DATASETS
 
 RUNNERS = {
     "fedavg":       "run_qfl_fedavg.py",
@@ -33,6 +36,10 @@ def build_job(strategy, split, seed, args):
            "--clients", str(args.clients), "--rounds", str(args.rounds),
            "--epochs", str(args.epochs), "--batch_size", str(args.batch_size),
            "--lr", str(args.lr), "--seed", str(seed)]
+    if args.dataset != "fashionmnist":
+        cmd += ["--dataset", args.dataset]
+    if args.folder:
+        cmd += ["--folder", args.folder]
 
     tail = f"c{args.clients}_e{args.epochs}_lr{args.lr}_s{seed}.csv"
     if strategy == "fedavg":
@@ -68,7 +75,7 @@ def build_job(strategy, split, seed, args):
             prefix = "qfl_fedprox_full"
         name = f"{prefix}_{partition}_a{alpha}_mu{args.mu}_{tail}"
 
-    return cmd, os.path.join(ROOT, "results", "tables", name)
+    return cmd, os.path.join(ROOT, "results", "tables", args.folder, name)
 
 
 def is_done(csv_path, rounds):
@@ -78,10 +85,10 @@ def is_done(csv_path, rounds):
         return sum(1 for _ in f) - 1 >= rounds
 
 
-def run_job(job, threads):
+def run_job(job, threads, folder):
     cmd, csv_path = job
     name = os.path.basename(csv_path)[:-4]
-    log_path = os.path.join(ROOT, "results", "logs", name + ".log")
+    log_path = os.path.join(ROOT, "results", "logs", folder, name + ".log")
     env = dict(os.environ, OMP_NUM_THREADS=str(threads), MKL_NUM_THREADS=str(threads),
                PYTHONUNBUFFERED="1", PYTHONIOENCODING="utf-8")
 
@@ -93,7 +100,7 @@ def run_job(job, threads):
     if code == 0:
         print(f"done    {name}  ({minutes:.1f} min)", flush=True)
     else:
-        print(f"FAILED  {name}  (exit {code}, see results/logs/{name}.log)", flush=True)
+        print(f"FAILED  {name}  (exit {code}, see {os.path.relpath(log_path, ROOT)})", flush=True)
     return code
 
 
@@ -111,10 +118,15 @@ if __name__ == "__main__":
     parser.add_argument("--mu",         type=float, default=0.01)
     parser.add_argument("--lam",        type=float, default=0.5)
     parser.add_argument("--tau",        type=float, default=1.0)
+    parser.add_argument("--dataset",    type=str,   default="fashionmnist", choices=list(DATASETS))
+    parser.add_argument("--folder",     type=str,   default=None)
     parser.add_argument("--workers",    type=int,   default=1)
     parser.add_argument("--threads",    type=int,   default=4)
     parser.add_argument("--dry_run",    action="store_true")
     args = parser.parse_args()
+    if args.folder is None:
+        # runs on other datasets get their own folder, so their file names never clash
+        args.folder = "" if args.dataset == "fashionmnist" else args.dataset
 
     jobs = [build_job(st, sp, seed, args)
             for seed in args.seeds for sp in args.splits for st in args.strategies]
@@ -127,10 +139,11 @@ if __name__ == "__main__":
             print(" ".join(cmd[1:]))
         sys.exit(0)
 
-    os.makedirs(os.path.join(ROOT, "results", "logs"), exist_ok=True)
+    os.makedirs(os.path.join(ROOT, "results", "logs", args.folder), exist_ok=True)
+    load_dataset(args.dataset)  # download once here, so the parallel runs don't all download it at the same time
     start = time.time()
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
-        codes = list(pool.map(lambda job: run_job(job, args.threads), todo))
+        codes = list(pool.map(lambda job: run_job(job, args.threads, args.folder), todo))
 
     failed = sum(1 for code in codes if code != 0)
     print(f"\nFinished {len(todo)} runs in {(time.time() - start) / 60:.1f} min, {failed} failed")

@@ -9,18 +9,20 @@ from torch.utils.data import DataLoader, Subset
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from data import load_dataset, iid_partition, dirichlet_partition, quantity_skew_partition, compute_emd_proxy
+from data import load_dataset, iid_partition, dirichlet_partition, quantity_skew_partition, compute_emd_proxy, DATASETS
 from models import HybridQNN
 from federation import train_fedprox, aggregate_fedavg
 from evaluation import evaluate, client_drift
 
 
 def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
-        mu=0.01, quantum_only=True, partition="dirichlet", alpha=0.5, seed=42, device="cpu"):
+        mu=0.01, quantum_only=True, partition="dirichlet", alpha=0.5, seed=42,
+        dataset="fashionmnist", folder="", device="cpu"):
 
-    print(f"\n=== Quantum FedProx | mu={mu} | quantum_only={quantum_only} | partition={partition} | alpha={alpha} ===\n")
+    print(f"\n=== Quantum FedProx | {dataset} | mu={mu} | quantum_only={quantum_only} | partition={partition} | alpha={alpha} ===\n")
 
-    train_data, test_data = load_dataset("fashionmnist")
+    train_data, test_data = load_dataset(dataset)
+    in_channels, num_classes = DATASETS[dataset]
     test_loader = DataLoader(test_data, batch_size=128, shuffle=False)
 
     if partition == "iid":
@@ -38,7 +40,7 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
     emd = compute_emd_proxy(client_indices, train_data)
 
     torch.manual_seed(seed)
-    global_model = HybridQNN(in_channels=1, num_classes=10)
+    global_model = HybridQNN(in_channels=in_channels, num_classes=num_classes)
     print(f"Model parameters: {global_model.count_parameters():,}\n")
 
     history = []
@@ -62,9 +64,10 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
         history.append({"round": r, "mu": mu, "quantum_only": quantum_only, "seed": seed,
                         "emd": emd, **metrics, **drift, "time": round(elapsed, 1)})
 
-    os.makedirs("results/tables", exist_ok=True)
+    out_dir = os.path.join("results", "tables", folder)
+    os.makedirs(out_dir, exist_ok=True)
     name = "qfl_fedprox" if quantum_only else "qfl_fedprox_full"
-    out = f"results/tables/{name}_{partition}_a{alpha}_mu{mu}_c{num_clients}_e{local_epochs}_lr{lr}_s{seed}.csv"
+    out = os.path.join(out_dir, f"{name}_{partition}_a{alpha}_mu{mu}_c{num_clients}_e{local_epochs}_lr{lr}_s{seed}.csv")
     pd.DataFrame(history).to_csv(out, index=False)
     print(f"\nSaved to {out}")
 
@@ -81,8 +84,11 @@ if __name__ == "__main__":
     parser.add_argument("--partition",    type=str,   default="dirichlet", choices=["iid", "dirichlet", "quantity"])
     parser.add_argument("--alpha",        type=float, default=0.5)
     parser.add_argument("--seed",         type=int,   default=42)
+    parser.add_argument("--dataset",      type=str,   default="fashionmnist", choices=list(DATASETS))
+    parser.add_argument("--folder",       type=str,   default="")
     args = parser.parse_args()
 
     run(num_clients=args.clients, rounds=args.rounds, local_epochs=args.epochs,
         batch_size=args.batch_size, lr=args.lr, mu=args.mu, quantum_only=not args.full_prox,
-        partition=args.partition, alpha=args.alpha, seed=args.seed)
+        partition=args.partition, alpha=args.alpha, seed=args.seed,
+        dataset=args.dataset, folder=args.folder)

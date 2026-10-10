@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 
 DATA_ROOT = os.path.join(os.path.dirname(__file__), "..", "data", "raw")
 
+# input channels and number of classes of each dataset
+DATASETS = {"fashionmnist": (1, 10), "mnist": (1, 10), "pathmnist": (3, 9)}
+
 
 def load_dataset(name: str = "fashionmnist", normalize: bool = True) -> Tuple[Dataset, Dataset]:
     os.makedirs(DATA_ROOT, exist_ok=True)
@@ -21,6 +24,14 @@ def load_dataset(name: str = "fashionmnist", normalize: bool = True) -> Tuple[Da
         train = datasets.FashionMNIST(root=DATA_ROOT, train=True, download=True, transform=transform)
         test = datasets.FashionMNIST(root=DATA_ROOT, train=False, download=True, transform=transform)
 
+    elif name == "mnist":
+        t = [transforms.ToTensor()]
+        if normalize:
+            t.append(transforms.Normalize((0.5,), (0.5,)))
+        transform = transforms.Compose(t)
+        train = datasets.MNIST(root=DATA_ROOT, train=True, download=True, transform=transform)
+        test = datasets.MNIST(root=DATA_ROOT, train=False, download=True, transform=transform)
+
     elif name == "pathmnist":
         try:
             from medmnist import PathMNIST
@@ -30,11 +41,14 @@ def load_dataset(name: str = "fashionmnist", normalize: bool = True) -> Tuple[Da
         if normalize:
             t.append(transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]))
         transform = transforms.Compose(t)
-        train = PathMNIST(split="train", transform=transform, download=True, root=DATA_ROOT)
-        test = PathMNIST(split="test", transform=transform, download=True, root=DATA_ROOT)
+        # medmnist gives each label as a 1-element array, the loss needs a plain int
+        train = PathMNIST(split="train", transform=transform, target_transform=lambda y: int(y[0]),
+                          download=True, root=DATA_ROOT)
+        test = PathMNIST(split="test", transform=transform, target_transform=lambda y: int(y[0]),
+                         download=True, root=DATA_ROOT)
 
     else:
-        raise ValueError(f"Unknown dataset '{name}'. Use 'fashionmnist' or 'pathmnist'.")
+        raise ValueError(f"Unknown dataset '{name}'. Use one of {list(DATASETS)}.")
 
     print(f"[data] {name}: {len(train)} train / {len(test)} test")
     return train, test

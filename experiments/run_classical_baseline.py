@@ -9,18 +9,19 @@ from torch.utils.data import DataLoader, Subset
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from data import load_dataset, iid_partition, dirichlet_partition, quantity_skew_partition, compute_emd_proxy
+from data import load_dataset, iid_partition, dirichlet_partition, quantity_skew_partition, compute_emd_proxy, DATASETS
 from models import ClassicalCNN
 from federation import train_one_round, aggregate_fedavg
 from evaluation import evaluate, client_drift
 
 
 def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
-        partition="dirichlet", alpha=0.5, seed=42, device="cpu"):
+        partition="dirichlet", alpha=0.5, seed=42, dataset="fashionmnist", folder="", device="cpu"):
 
-    print(f"\n=== Classical FL Baseline | partition={partition} | alpha={alpha} | clients={num_clients} ===\n")
+    print(f"\n=== Classical FL Baseline | {dataset} | partition={partition} | alpha={alpha} | clients={num_clients} ===\n")
 
-    train_data, test_data = load_dataset("fashionmnist")
+    train_data, test_data = load_dataset(dataset)
+    in_channels, num_classes = DATASETS[dataset]
     test_loader = DataLoader(test_data, batch_size=256, shuffle=False)
 
     if partition == "iid":
@@ -38,7 +39,7 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
     emd = compute_emd_proxy(client_indices, train_data)
 
     torch.manual_seed(seed)
-    global_model = ClassicalCNN(in_channels=1, num_classes=10)
+    global_model = ClassicalCNN(in_channels=in_channels, num_classes=num_classes)
     print(f"Model parameters: {global_model.count_parameters():,}\n")
 
     history = []
@@ -58,8 +59,9 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
         print(f"Round {r:02d}/{rounds} | loss={metrics['loss']:.4f} | acc={metrics['accuracy']:.4f} | time={elapsed:.1f}s")
         history.append({"round": r, "seed": seed, "emd": emd, **metrics, **drift, "time": round(elapsed, 1)})
 
-    os.makedirs("results/tables", exist_ok=True)
-    out = f"results/tables/classical_{partition}_a{alpha}_c{num_clients}_e{local_epochs}_lr{lr}_s{seed}.csv"
+    out_dir = os.path.join("results", "tables", folder)
+    os.makedirs(out_dir, exist_ok=True)
+    out = os.path.join(out_dir, f"classical_{partition}_a{alpha}_c{num_clients}_e{local_epochs}_lr{lr}_s{seed}.csv")
     pd.DataFrame(history).to_csv(out, index=False)
     print(f"\nSaved to {out}")
 
@@ -74,8 +76,11 @@ if __name__ == "__main__":
     parser.add_argument("--partition",  type=str,   default="dirichlet", choices=["iid", "dirichlet", "quantity"])
     parser.add_argument("--alpha",      type=float, default=0.5)
     parser.add_argument("--seed",       type=int,   default=42)
+    parser.add_argument("--dataset",    type=str,   default="fashionmnist", choices=list(DATASETS))
+    parser.add_argument("--folder",     type=str,   default="")
     args = parser.parse_args()
 
     run(num_clients=args.clients, rounds=args.rounds, local_epochs=args.epochs,
         batch_size=args.batch_size, lr=args.lr,
-        partition=args.partition, alpha=args.alpha, seed=args.seed)
+        partition=args.partition, alpha=args.alpha, seed=args.seed,
+        dataset=args.dataset, folder=args.folder)

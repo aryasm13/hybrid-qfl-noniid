@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader, Subset
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from data import load_dataset, iid_partition, dirichlet_partition, quantity_skew_partition, get_labels, compute_emd_proxy
+from data import load_dataset, iid_partition, dirichlet_partition, quantity_skew_partition, get_labels, compute_emd_proxy, DATASETS
 from models import HybridQNN
 from federation import train_logit_adjusted, aggregate_fedavg
 from evaluation import evaluate, client_drift
@@ -22,11 +22,12 @@ def get_log_prior(dataset, indices, n_classes=10):
 
 
 def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
-        tau=1.0, partition="dirichlet", alpha=0.5, seed=42, device="cpu"):
+        tau=1.0, partition="dirichlet", alpha=0.5, seed=42, dataset="fashionmnist", folder="", device="cpu"):
 
-    print(f"\n=== Logit-adjusted FedAvg | tau={tau} | partition={partition} | alpha={alpha} | clients={num_clients} ===\n")
+    print(f"\n=== Logit-adjusted FedAvg | {dataset} | tau={tau} | partition={partition} | alpha={alpha} | clients={num_clients} ===\n")
 
-    train_data, test_data = load_dataset("fashionmnist")
+    train_data, test_data = load_dataset(dataset)
+    in_channels, num_classes = DATASETS[dataset]
     test_loader = DataLoader(test_data, batch_size=128, shuffle=False)
 
     if partition == "iid":
@@ -42,10 +43,10 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
     ]
     sample_counts = [len(client_indices[cid]) for cid in range(num_clients)]
     emd = compute_emd_proxy(client_indices, train_data)
-    log_priors = [get_log_prior(train_data, client_indices[cid]) for cid in range(num_clients)]
+    log_priors = [get_log_prior(train_data, client_indices[cid], num_classes) for cid in range(num_clients)]
 
     torch.manual_seed(seed)
-    global_model = HybridQNN(in_channels=1, num_classes=10)
+    global_model = HybridQNN(in_channels=in_channels, num_classes=num_classes)
     print(f"Model parameters: {global_model.count_parameters():,}\n")
 
     history = []
@@ -65,8 +66,9 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
         print(f"Round {r:02d}/{rounds} | loss={metrics['loss']:.4f} | acc={metrics['accuracy']:.4f} | time={elapsed:.1f}s")
         history.append({"round": r, "tau": tau, "seed": seed, "emd": emd, **metrics, **drift, "time": round(elapsed, 1)})
 
-    os.makedirs("results/tables", exist_ok=True)
-    out = f"results/tables/qfl_logitadj_{partition}_a{alpha}_tau{tau}_c{num_clients}_e{local_epochs}_lr{lr}_s{seed}.csv"
+    out_dir = os.path.join("results", "tables", folder)
+    os.makedirs(out_dir, exist_ok=True)
+    out = os.path.join(out_dir, f"qfl_logitadj_{partition}_a{alpha}_tau{tau}_c{num_clients}_e{local_epochs}_lr{lr}_s{seed}.csv")
     pd.DataFrame(history).to_csv(out, index=False)
     print(f"\nSaved to {out}")
 
@@ -82,8 +84,11 @@ if __name__ == "__main__":
     parser.add_argument("--partition",  type=str,   default="dirichlet", choices=["iid", "dirichlet", "quantity"])
     parser.add_argument("--alpha",      type=float, default=0.5)
     parser.add_argument("--seed",       type=int,   default=42)
+    parser.add_argument("--dataset",    type=str,   default="fashionmnist", choices=list(DATASETS))
+    parser.add_argument("--folder",     type=str,   default="")
     args = parser.parse_args()
 
     run(num_clients=args.clients, rounds=args.rounds, local_epochs=args.epochs,
         batch_size=args.batch_size, lr=args.lr, tau=args.tau,
-        partition=args.partition, alpha=args.alpha, seed=args.seed)
+        partition=args.partition, alpha=args.alpha, seed=args.seed,
+        dataset=args.dataset, folder=args.folder)

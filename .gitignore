@@ -19,9 +19,9 @@ env/
 .ipynb_checkpoints/
 
 # Experiment outputs
-results/tables/*.csv
-results/plots/*.png
-results/plots/*.pdf
+results/tables/**/*.csv
+results/plots/**/*.png
+results/plots/**/*.pdf
 wandb/
 
 # Data (too large for git, download via script)
