@@ -72,6 +72,12 @@ def run(num_clients=10, rounds=5, local_epochs=1, batch_size=32, lr=0.001,
     pd.DataFrame(history).to_csv(out, index=False)
     print(f"\nSaved to {out}")
 
+    # the final model is kept for checks after training (shot noise, which classes the readout can reach)
+    model_path = os.path.join("results", "models", folder, os.path.basename(out).replace(".csv", ".pt"))
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    torch.save(global_model.state_dict(), model_path)
+    print(f"Model saved to {model_path}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
