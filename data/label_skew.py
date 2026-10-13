@@ -33,6 +33,13 @@ def dirichlet_partition(
             client_indices[cid].extend(cls_idx[ptr : ptr + counts[cid]].tolist())
             ptr += counts[cid]
 
+    # with many clients a client can get no data at all and could not train,
+    # so it takes one sample from the largest client (splits where every client has data stay the same)
+    for cid in range(n_clients):
+        if not client_indices[cid]:
+            largest = max(client_indices, key=lambda k: len(client_indices[k]))
+            client_indices[cid].append(client_indices[largest].pop())
+
     for cid in range(n_clients):
         np.random.shuffle(client_indices[cid])
 
