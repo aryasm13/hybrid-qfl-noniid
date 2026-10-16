@@ -23,7 +23,7 @@ print("\n=== Environment Verification ===\n")
 print("[imports]")
 check("pennylane",   lambda: __import__("pennylane"))
 check("torch",       lambda: __import__("torch"))
-check("flwr",        lambda: __import__("flwr"))
+check("pandas",      lambda: __import__("pandas"))
 check("numpy",       lambda: __import__("numpy"))
 check("matplotlib",  lambda: __import__("matplotlib"))
 
