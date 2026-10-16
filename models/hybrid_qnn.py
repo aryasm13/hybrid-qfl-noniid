@@ -55,13 +55,15 @@ class HybridQNN(nn.Module):
         if fixed_readout or frozen_readout or pauli_readout or random_codes:
             self.head.requires_grad_(False)
 
-    def forward(self, x):
+    def encode(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
         x = torch.flatten(x, 1)
         x = F.relu(self.fc1(x))
-        x = torch.tanh(self.fc2(x)) * 3.14159  # scale to [-pi, pi]
+        return torch.tanh(self.fc2(x)) * 3.14159  # scale to [-pi, pi]
 
+    def forward(self, x):
+        x = self.encode(x)
         x = self.vqc(x)                          # (batch, 4) -> (batch, 4 or 10) PauliZ expectations
         return self.head(x)
 

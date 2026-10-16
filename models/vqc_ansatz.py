@@ -7,13 +7,16 @@ N_QUBITS = 4
 N_LAYERS = 2
 
 
-def get_vqc_layer(pairs=False):
+def get_vqc_layer(pairs=False, probs=False):
     dev = qml.device("default.qubit", wires=N_QUBITS)
 
     @qml.qnode(dev, interface="torch", diff_method="backprop")
     def circuit(inputs, weights):
         qml.AngleEmbedding(inputs, wires=range(N_QUBITS))
         qml.StronglyEntanglingLayers(weights, wires=range(N_QUBITS))
+        if probs:
+            # probability of each of the 16 bitstrings, used to simulate a finite number of shots
+            return qml.probs(wires=range(N_QUBITS))
         readings = [qml.expval(qml.PauliZ(i)) for i in range(N_QUBITS)]
         if pairs:
             # two-qubit parities Z_i Z_j, measured from the same computational-basis shots
