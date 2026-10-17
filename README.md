@@ -57,6 +57,8 @@ Readout ablations (Fashion-MNIST, α = 0.1, 8 seeds): random frozen head 28.33, 
 
 Finite measurement shots (saved models): with 1,000 shots per reading FCO stays within 0.4 points of its noiseless accuracy on every dataset and split (every model within 0.8), and with 100 shots FCO keeps its lead over FedAvg at α = 0.1 (Fashion-MNIST +16.9, MNIST +16.7). With only 10 shots FCO degrades more than FedAvg.
 
+Quantum state analysis and hardware noise (saved models): the circuit trained with FedAvg ends in states close to a few bitstrings, while the FCO circuit stays entangled and spread over many outcomes. On every dataset and split, FCO has higher Meyer-Wallach entanglement (+0.19 to +0.34) and higher measurement entropy (+1.05 to +1.94 bits) than FedAvg on every seed. On a density-matrix simulator, FCO's predictions do not change at all with readout errors (tested up to 10% flipped bits) and change by at most 0.7 points with a depolarizing error of 5% after every gate, while FedAvg loses 1.4 to 13.3 points. With that gate noise FCO beats FedAvg on every seed of every split, including PathMNIST at α = 0.1 (+10.0, 5 of 5 seeds).
+
 What it does not do: on PathMNIST at α = 0.1 FCO removes the readout collapse and fewer classes are lost, but accuracy does not improve, because the image features themselves degrade (even the classical CNN loses 20 points there). The classical twin and the classical CNN remain more accurate than the hybrid model with FCO.
 
 ## Repository structure
@@ -80,7 +82,9 @@ hybrid-qfl-noniid/
 ├── evaluation/
 │   ├── classical_metrics.py      - test loss, accuracy and per-class accuracy
 │   ├── client_drift.py           - per-layer drift and agreement of the client updates
-│   └── shot_noise.py             - test accuracy with a finite number of measurement shots
+│   ├── shot_noise.py             - test accuracy with a finite number of measurement shots
+│   ├── entanglement.py           - entanglement, measurement entropy and pair correlations of the circuit states
+│   └── gate_noise.py             - test accuracy with gate noise and readout errors (density-matrix simulator)
 ├── experiments/
 │   ├── run_qfl_fedavg.py         - hybrid model with FedAvg (and every readout variant)
 │   ├── run_fedprox.py            - hybrid model with FedProx
@@ -88,11 +92,13 @@ hybrid-qfl-noniid/
 │   ├── run_logit_adjust.py       - hybrid model with the calibrated loss
 │   ├── run_classical_baseline.py - classical CNN with FedAvg
 │   ├── run_grid.py               - runs many settings and seeds in parallel, skips finished runs
-│   └── eval_shots.py             - finite-shot evaluation of the saved models
+│   ├── eval_shots.py             - finite-shot evaluation of the saved models
+│   ├── eval_entanglement.py      - entanglement of the saved models, at the start and after training
+│   └── eval_noise.py             - gate noise and readout error test of the saved models
 ├── notebooks/
 │   ├── plot_baseline_{fashionmnist,mnist,pathmnist}.ipynb - data exploration, client splits, EMD, classical baseline
 │   ├── plot_results_{fashionmnist,mnist,pathmnist}.ipynb  - results tables, same-seed gains with p-values, figures
-│   └── plot_diagnostics.ipynb    - reproducibility, 50 rounds, lost classes, readout collapse, clients, shots
+│   └── plot_diagnostics.ipynb    - reproducibility, 50 rounds, lost classes, readout collapse, clients, shots, entanglement, noise
 ├── results/                      - tables, models, logs and plots (created by the runs, not in git)
 ├── Lit review/                   - reference papers (PDF)
 ├── verify_setup.py               - checks the environment and the data pipeline
@@ -134,6 +140,13 @@ Finite-shot evaluation of the saved models:
 
 ```bash
 python experiments/eval_shots.py --dataset fashionmnist
+```
+
+Entanglement of the circuit states (Meyer-Wallach measure, measurement entropy, pair correlations) and test accuracy under gate noise and readout errors on PennyLane's density-matrix simulator `default.mixed`:
+
+```bash
+python experiments/eval_entanglement.py --dataset fashionmnist
+python experiments/eval_noise.py --dataset fashionmnist
 ```
 
 Every run writes a CSV to `results/tables/<folder>/` (test accuracy, loss, per-class accuracy, per-layer drift and agreement for every round, and the measured EMD) and its final model to `results/models/<folder>/`. Runs on MNIST and PathMNIST go to their own folders. The same seed gives the same client split, the same starting weights and the same data order, so every result can be repeated exactly. The notebooks read these folders and produce all tables and figures.
