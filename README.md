@@ -37,7 +37,7 @@ Variants and controls used to test it:
 
 Test accuracy (%), mean of the last 5 of 20 rounds, mean over seeds; 10 clients, 1 local epoch, batch size 32, Adam (lr 0.003 hybrid, 0.001 CNN).
 
-| Dataset | Split | QFL FedAvg | FCO (ours) | Classical twin | Classical CNN |
+| Dataset | Split | QFL FedAvg | FCO (proposed method) | Classical twin | Classical CNN |
 |---|---|---|---|---|---|
 | Fashion-MNIST | IID | 85.01 | **87.83** | 88.57 | 90.14 |
 | Fashion-MNIST | Dirichlet α = 0.5 | 75.81 | **85.18** | 85.51 | 88.93 |
@@ -100,7 +100,7 @@ hybrid-qfl-noniid/
 │   ├── plot_results_{fashionmnist,mnist,pathmnist}.ipynb  - results tables, same-seed gains with p-values, figures
 │   └── plot_diagnostics.ipynb    - reproducibility, 50 rounds, lost classes, readout collapse, clients, shots, entanglement, noise
 ├── results/                      - tables, models, logs and plots (created by the runs, not in git)
-├── Lit review/                   - reference papers (PDF)
+├── Lit review/                   - the reference papers (PDF), numbered as in the report
 ├── verify_setup.py               - checks the environment and the data pipeline
 ├── requirements.txt
 └── environment.yml
@@ -153,23 +153,35 @@ Every run writes a CSV to `results/tables/<folder>/` (test accuracy, loss, per-c
 
 ## References
 
-- McMahan, B., et al. (2017). Communication-efficient learning of deep networks from decentralized data. AISTATS.
-- Li, T., et al. (2020). Federated optimization in heterogeneous networks (FedProx). MLSys.
-- Hsu, T.-M. H., Qi, H., & Brown, M. (2019). Measuring the effects of non-identical data distribution for federated visual classification. arXiv:1909.06335.
-- Huang, R., Tan, X., & Xu, Q. (2022). Quantum federated learning with decentralized data. IEEE Journal of Selected Topics in Quantum Electronics.
-- Zhao, H. (2023). Non-IID quantum federated learning with one-shot communication complexity. Quantum Machine Intelligence.
-- Chehimi, M., & Saad, W. (2022). Quantum federated learning with quantum data. ICASSP.
-- Oh, J., Kim, S., & Yun, S.-Y. (2022). FedBABU: Toward enhanced representation for federated image classification. ICLR.
-- Li, Z., et al. (2023). No fear of classifier biases: Neural collapse inspired federated learning with synthetic and fixed classifier. ICCV.
-- Zhang, J., et al. (2022). Federated learning with label distribution skew via logits calibration. ICML.
-- Xiao, H., Rasul, K., & Vollgraf, R. (2017). Fashion-MNIST. arXiv:1708.07747.
-- LeCun, Y., et al. (1998). Gradient-based learning applied to document recognition. Proceedings of the IEEE.
-- Yang, J., et al. (2023). MedMNIST v2: A large-scale lightweight benchmark for 2D and 3D biomedical image classification. Scientific Data.
+The 30 references of the project report, numbered as in the report (IEEE style). The papers are in `Lit review/`, with file names that start with the same number (arXiv or open-access versions where the published version is not open). Reference 24 is a textbook and is not included.
 
-## Team
-
-- Arya Mulay
-- Nakul Thombare
-- Keshav Sukhija
-
-**Faculty supervisor:** Dr. Aswani Kumar Cherukuri, Professor and Director, C-FAIR, VIT Vellore
+1. H. B. McMahan, E. Moore, D. Ramage, S. Hampson, and B. A. y Arcas, "Communication-efficient learning of deep networks from decentralized data," in Proc. 20th Int. Conf. Artif. Intell. Statist. (AISTATS), PMLR, vol. 54, 2017, pp. 1273-1282.
+2. T.-M. H. Hsu, H. Qi, and M. Brown, "Measuring the effects of non-identical data distribution for federated visual classification," arXiv:1909.06335, 2019.
+3. Y. Zhao, M. Li, L. Lai, N. Suda, D. Civin, and V. Chandra, "Federated learning with non-IID data," arXiv:1806.00582, 2018.
+4. T. Li, A. K. Sahu, M. Zaheer, M. Sanjabi, A. Talwalkar, and V. Smith, "Federated optimization in heterogeneous networks," in Proc. Mach. Learn. Syst. (MLSys), vol. 2, 2020, pp. 429-450.
+5. J. Zhang, Z. Li, B. Li, J. Xu, S. Wu, S. Ding, and C. Wu, "Federated learning with label distribution skew via logits calibration," in Proc. 39th Int. Conf. Mach. Learn. (ICML), PMLR, vol. 162, 2022, pp. 26311-26329.
+6. X.-C. Li and D.-C. Zhan, "FedRS: Federated learning with restricted softmax for label distribution non-IID data," in Proc. 27th ACM SIGKDD Conf. Knowl. Discov. Data Min. (KDD), 2021.
+7. J. Oh, S. Kim, and S.-Y. Yun, "FedBABU: Toward enhanced representation for federated image classification," in Proc. Int. Conf. Learn. Represent. (ICLR), 2022.
+8. Z. Li, X. Shang, R. He, T. Lin, and C. Wu, "No fear of classifier biases: Neural collapse inspired federated learning with synthetic and fixed classifier," in Proc. IEEE/CVF Int. Conf. Comput. Vis. (ICCV), 2023, pp. 5319-5329.
+9. J. Preskill, "Quantum computing in the NISQ era and beyond," Quantum, vol. 2, p. 79, 2018, doi: 10.22331/q-2018-08-06-79.
+10. M. Cerezo, A. Arrasmith, R. Babbush, S. C. Benjamin, S. Endo, K. Fujii, J. R. McClean, K. Mitarai, X. Yuan, L. Cincio, and P. J. Coles, "Variational quantum algorithms," Nat. Rev. Phys., vol. 3, no. 9, pp. 625-644, 2021, doi: 10.1038/s42254-021-00348-9.
+11. M. Schuld, A. Bocharov, K. M. Svore, and N. Wiebe, "Circuit-centric quantum classifiers," Phys. Rev. A, vol. 101, no. 3, Art. no. 032308, 2020.
+12. M. Chehimi and W. Saad, "Quantum federated learning with quantum data," in Proc. IEEE Int. Conf. Acoust., Speech Signal Process. (ICASSP), 2022, pp. 8617-8621.
+13. R. Huang, X. Tan, and Q. Xu, "Quantum federated learning with decentralized data," IEEE J. Sel. Topics Quantum Electron., vol. 28, no. 4, Art. no. 6500110, 2022.
+14. Y. Song, Y. Wu, S. Wu, D. Li, Q. Wen, S. Qin, and F. Gao, "A quantum federated learning framework for classical clients," Sci. China Phys. Mech. Astron., vol. 67, no. 5, Art. no. 250311, 2024, doi: 10.1007/s11433-023-2337-2.
+15. M. R. Uddin, S. Shaon, R. Rahman, D. C. Nguyen, O. A. Dobre, and D. Niyato, "Quantum federated learning: A comprehensive survey," IEEE Commun. Surveys Tuts., vol. 28, 2026, doi: 10.1109/COMST.2025.3644750.
+16. R. Ballester, J. Cerquides, and L. Artiles, "Quantum federated learning: A comprehensive literature review of foundations, challenges, and future directions," Quantum Mach. Intell., 2025, doi: 10.1007/s42484-025-00292-2.
+17. D. Yin, A. Pananjady, M. Lam, D. Papailiopoulos, K. Ramchandran, and P. Bartlett, "Gradient diversity: A key ingredient for scalable distributed learning," in Proc. 21st Int. Conf. Artif. Intell. Statist. (AISTATS), PMLR, vol. 84, 2018, pp. 1998-2007.
+18. D. A. Meyer and N. R. Wallach, "Global entanglement in multiparticle systems," J. Math. Phys., vol. 43, no. 9, p. 4273, 2002, doi: 10.1063/1.1497700.
+19. S. Sim, P. D. Johnson, and A. Aspuru-Guzik, "Expressibility and entangling capability of parameterized quantum circuits for hybrid quantum-classical algorithms," Adv. Quantum Technol., vol. 2, no. 12, Art. no. 1900070, 2019.
+20. J. R. McClean, S. Boixo, V. N. Smelyanskiy, R. Babbush, and H. Neven, "Barren plateaus in quantum neural network training landscapes," Nat. Commun., vol. 9, Art. no. 4812, 2018, doi: 10.1038/s41467-018-07090-4.
+21. H. Zhao, "Non-IID quantum federated learning with one-shot communication complexity," Quantum Mach. Intell., vol. 5, Art. no. 3, 2023, doi: 10.1007/s42484-022-00091-z.
+22. Y. Wang, X. He, Z. Cai, R. Zhang, R. Ma, Y. Liu, and R. Buyya, "FEDCOMPASS: Federated clustered and periodic aggregation framework for hybrid classical-quantum models," arXiv:2602.03052, 2026.
+23. S. I. Nanayakkara and S. R. Pokhrel, "A drift-stable quantum federated learning for intelligent services," arXiv:2607.21647, 2026.
+24. M. A. Nielsen and I. L. Chuang, Quantum Computation and Quantum Information, 10th anniversary ed. Cambridge, U.K.: Cambridge Univ. Press, 2010.
+25. G. K. Brennen, "An observable measure of entanglement for pure states of multi-qubit systems," Quantum Inf. Comput., vol. 3, no. 6, pp. 619-626, 2003, doi: 10.26421/QIC3.6-5.
+26. V. Bergholm et al., "PennyLane: Automatic differentiation of hybrid quantum-classical computations," arXiv:1811.04968, 2018.
+27. H. Xiao, K. Rasul, and R. Vollgraf, "Fashion-MNIST: A novel image dataset for benchmarking machine learning algorithms," arXiv:1708.07747, 2017.
+28. Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner, "Gradient-based learning applied to document recognition," Proc. IEEE, vol. 86, no. 11, pp. 2278-2324, 1998.
+29. J. Yang, R. Shi, D. Wei, Z. Liu, L. Zhao, B. Ke, H. Pfister, and B. Ni, "MedMNIST v2: A large-scale lightweight benchmark for 2D and 3D biomedical image classification," Sci. Data, vol. 10, Art. no. 41, 2023, doi: 10.1038/s41597-022-01721-8.
+30. J. N. Kather et al., "Predicting survival from colorectal cancer histology slides using deep learning: A retrospective multicenter study," PLOS Med., vol. 16, no. 1, Art. no. e1002730, 2019, doi: 10.1371/journal.pmed.1002730.
