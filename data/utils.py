@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 DATA_ROOT = os.path.join(os.path.dirname(__file__), "..", "data", "raw")
 
 # input channels and number of classes of each dataset
-DATASETS = {"fashionmnist": (1, 10), "mnist": (1, 10), "pathmnist": (3, 9)}
+DATASETS = {"fashionmnist": (1, 10), "mnist": (1, 10), "pathmnist": (3, 9), "cifar10": (3, 10)}
 
 
 def load_dataset(name: str = "fashionmnist", normalize: bool = True) -> Tuple[Dataset, Dataset]:
@@ -46,6 +46,15 @@ def load_dataset(name: str = "fashionmnist", normalize: bool = True) -> Tuple[Da
                           download=True, root=DATA_ROOT)
         test = PathMNIST(split="test", transform=transform, target_transform=lambda y: int(y[0]),
                          download=True, root=DATA_ROOT)
+
+    elif name == "cifar10":
+        # resized from 32x32 to 28x28 so every model works unchanged on all datasets
+        t = [transforms.Resize(28), transforms.ToTensor()]
+        if normalize:
+            t.append(transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5]))
+        transform = transforms.Compose(t)
+        train = datasets.CIFAR10(root=DATA_ROOT, train=True, download=True, transform=transform)
+        test = datasets.CIFAR10(root=DATA_ROOT, train=False, download=True, transform=transform)
 
     else:
         raise ValueError(f"Unknown dataset '{name}'. Use one of {list(DATASETS)}.")
