@@ -160,7 +160,7 @@ Every run writes a CSV to `results/tables/<folder>/` (test accuracy, loss, per-c
 
 ## References
 
-The 30 references of the project report, numbered as in the report (IEEE style). The papers are in `Lit review/`, with file names that start with the same number (arXiv or open-access versions where the published version is not open). Reference 24 is a textbook and is not included.
+The 31 references of the project report, numbered as in the report (IEEE style). The papers are in `Lit review/`, with file names that start with the same number (arXiv or open-access versions where the published version is not open). Reference 24 is a textbook and is not included.
 
 1. H. B. McMahan, E. Moore, D. Ramage, S. Hampson, and B. A. y Arcas, "Communication-efficient learning of deep networks from decentralized data," in Proc. 20th Int. Conf. Artif. Intell. Statist. (AISTATS), PMLR, vol. 54, 2017, pp. 1273-1282.
 2. T.-M. H. Hsu, H. Qi, and M. Brown, "Measuring the effects of non-identical data distribution for federated visual classification," arXiv:1909.06335, 2019.
@@ -192,3 +192,4 @@ The 30 references of the project report, numbered as in the report (IEEE style).
 28. Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner, "Gradient-based learning applied to document recognition," Proc. IEEE, vol. 86, no. 11, pp. 2278-2324, 1998.
 29. J. Yang, R. Shi, D. Wei, Z. Liu, L. Zhao, B. Ke, H. Pfister, and B. Ni, "MedMNIST v2: A large-scale lightweight benchmark for 2D and 3D biomedical image classification," Sci. Data, vol. 10, Art. no. 41, 2023, doi: 10.1038/s41597-022-01721-8.
 30. J. N. Kather et al., "Predicting survival from colorectal cancer histology slides using deep learning: A retrospective multicenter study," PLOS Med., vol. 16, no. 1, Art. no. e1002730, 2019, doi: 10.1371/journal.pmed.1002730.
+31. A. Krizhevsky, "Learning multiple layers of features from tiny images," Tech. Rep., Univ. of Toronto, 2009.
