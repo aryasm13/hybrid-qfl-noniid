@@ -10,7 +10,7 @@ What we found:
 
 - The hybrid model is much more fragile under label skew than a classical CNN (Fashion-MNIST: it loses 41.4 accuracy points from IID to Dirichlet α = 0.1, the CNN loses 7.9).
 - The standard fixes we tested (a proximal term on the quantum parameters or on all parameters, entropy-weighted aggregation, a calibrated local loss) give no reliable gain over 8 seeds.
-- The cause is **readout collapse**: the readout maps only 4 measured values to 10 classes, and averaging it across skewed clients leaves some classes with no region where they can win, so they can never be predicted. At α = 0.1 the readout learned by FedAvg leaves on average 1.7 (Fashion-MNIST), 2.4 (MNIST) and 1.8 (PathMNIST) classes unreachable, up to 4 on one seed.
+- The cause is **readout collapse**: the readout maps only 4 measured values to 10 classes, and averaging it across skewed clients leaves some classes with no region where they can win, so they can never be predicted. At α = 0.1 the readout learned by FedAvg leaves on average 1.7 (Fashion-MNIST), 2.4 (MNIST), 1.8 (PathMNIST) and 3.0 (CIFAR-10) classes unreachable, up to 6 on one seed.
 - **Fixed class observables (FCO)** freeze the readout as one fixed quantum observable per class, the same on every client and never averaged. Every class stays reachable by construction.
 
 ## Method: fixed class observables (FCO)
@@ -48,25 +48,30 @@ Test accuracy (%), mean of the last 5 of 20 rounds, mean over seeds; 10 clients,
 | PathMNIST | IID | 77.40 | 76.39 | 79.48 | 81.88 |
 | PathMNIST | Dirichlet α = 0.5 | 67.59 | **72.22** | 76.25 | 79.55 |
 | PathMNIST | Dirichlet α = 0.1 | 38.36 | 37.84 | 50.19 | 61.72 |
+| CIFAR-10 | IID | 46.84 | **50.78** | 55.05 | 63.13 |
+| CIFAR-10 | Dirichlet α = 0.5 | 38.96 | **45.76** | 50.37 | 60.88 |
+| CIFAR-10 | Dirichlet α = 0.1 | 22.82 | **29.83** | 32.24 | 52.97 |
 
-Seeds: Fashion-MNIST 8 for FedAvg, FCO and the twin (the CNN 3 at IID and α = 0.5); MNIST and PathMNIST 5 at α = 0.1 and α = 0.5 and 3 at IID (the CNN 5 at IID). Same-seed gains of FCO over FedAvg: Fashion-MNIST +2.82 / +9.37 / +16.77 at IID / α = 0.5 / α = 0.1 (p = 0.012 / 0.004 / 0.0004); MNIST +9.24 at α = 0.5 (5 of 5 seeds, p = 0.048) and +19.62 at α = 0.1 (5 of 5, p = 0.006); PathMNIST +4.63 at α = 0.5 (5 of 5, p = 0.020).
+Seeds: Fashion-MNIST 8 for FedAvg, FCO and the twin (the CNN 3 at IID and α = 0.5); MNIST, PathMNIST and CIFAR-10 5 at α = 0.1 and α = 0.5 and 3 at IID (the CNN 5 at IID). Same-seed gains of FCO over FedAvg: Fashion-MNIST +2.82 / +9.37 / +16.77 at IID / α = 0.5 / α = 0.1 (p = 0.012 / 0.004 / 0.0004); MNIST +9.24 at α = 0.5 (5 of 5 seeds, p = 0.048) and +19.62 at α = 0.1 (5 of 5, p = 0.006); PathMNIST +4.63 at α = 0.5 (5 of 5, p = 0.020); CIFAR-10 +3.94 / +6.79 / +7.01 at IID / α = 0.5 / α = 0.1 (3 of 3, 4 of 5 and 5 of 5 seeds, p = 0.047 / 0.031 / 0.017).
 
-More clients (Fashion-MNIST, α = 0.1, 5 seeds): the FCO gain over FedAvg is +15.5 with 10 clients, +16.4 with 20 and +25.0 with 50.
+CIFAR-10 (colour photos, resized from 32 x 32 to 28 x 28 so that every model is unchanged) is hard for every model at this size: even the classical CNN reaches only 63% with IID data, so its results are best read relative to the CNN. From IID to α = 0.1 the hybrid model with FedAvg keeps 49% of its accuracy, with FCO 59%, and the CNN 84%.
+
+More clients (Fashion-MNIST, α = 0.1, 5 seeds): the FCO gain over FedAvg is +15.5 with 10 clients, +16.4 with 20, +25.0 with 50 and +15.2 with 100, better on every seed each time (p = 0.009, 0.033, 0.001, 0.011). FCO stays between 58% and 64% from 10 to 100 clients, FedAvg between 39% and 47%.
 
 Readout ablations (Fashion-MNIST, α = 0.1, 8 seeds): random frozen head 28.33, random unit codes 54.97, Pauli observables 57.23, FCO 60.37.
 
-Finite measurement shots (saved models): with 1,000 shots per reading FCO stays within 0.4 points of its noiseless accuracy on every dataset and split (every model within 0.8), and with 100 shots FCO keeps its lead over FedAvg at α = 0.1 (Fashion-MNIST +16.9, MNIST +16.7). With only 10 shots FCO degrades more than FedAvg.
+Finite measurement shots (saved models, each tested 5 times with a new sampling seed; the standard deviation between the repeats is at most 0.5 points): with 1,000 shots per reading FCO stays within 0.5 points of its noiseless accuracy on every dataset and split (every model within 0.8), and with 100 shots FCO keeps its lead over FedAvg at α = 0.1 on Fashion-MNIST (+17.1), MNIST (+16.9) and CIFAR-10 (+5.3). With only 10 shots FCO degrades more than FedAvg.
 
-Quantum state analysis and hardware noise (saved models): the circuit trained with FedAvg ends in states close to a few bitstrings, while the FCO circuit stays entangled and spread over many outcomes. On every dataset and split, FCO has higher Meyer-Wallach entanglement (+0.19 to +0.34) and higher measurement entropy (+1.05 to +1.94 bits) than FedAvg on every seed. On a density-matrix simulator, FCO's predictions do not change at all with readout errors (tested up to 10% flipped bits) and change by at most 0.7 points with a depolarizing error of 5% after every gate, while FedAvg loses 1.4 to 13.3 points. With that gate noise FCO beats FedAvg on every seed of every split, including PathMNIST at α = 0.1 (+10.0, 5 of 5 seeds).
+Quantum state analysis and hardware noise (saved models): the circuit trained with FedAvg ends in states close to a few bitstrings, while the FCO circuit stays entangled and spread over many outcomes. On every dataset and split, FCO has higher Meyer-Wallach entanglement (+0.19 to +0.34) and higher measurement entropy (+1.05 to +1.94 bits) than FedAvg on every seed. On a density-matrix simulator, FCO's predictions do not change at all with readout errors (all 42 FCO models, tested up to 10% flipped bits) and change by at most 0.7 points on average with a depolarizing error of 5% after every gate, while FedAvg loses 1.4 to 13.3 points. With that gate noise FCO beats FedAvg on every seed of every split, including PathMNIST at α = 0.1 (+10.0, 5 of 5 seeds).
 
-What it does not do: on PathMNIST at α = 0.1 FCO removes the readout collapse and fewer classes are lost, but accuracy does not improve, because the image features themselves degrade (even the classical CNN loses 20 points there). The classical twin and the classical CNN remain more accurate than the hybrid model with FCO.
+What it does not do: on PathMNIST at α = 0.1 FCO removes the readout collapse and fewer classes are lost, but accuracy does not improve, because the image features themselves degrade (even the classical CNN loses 20 points there). On CIFAR-10 at α = 0.1 FCO helps the classical twin even more than the hybrid model (+10.0 against +7.0), so the result that FCO helps the quantum model more than its classical twin holds on Fashion-MNIST and MNIST but not on CIFAR-10. The classical twin and the classical CNN remain more accurate than the hybrid model with FCO.
 
 ## Repository structure
 
 ```
 hybrid-qfl-noniid/
 ├── data/
-│   ├── utils.py                  - load_dataset (Fashion-MNIST, MNIST, PathMNIST), DATASETS table, partition plot
+│   ├── utils.py                  - load_dataset (Fashion-MNIST, MNIST, PathMNIST, CIFAR-10), DATASETS table, partition plot
 │   ├── iid_partition.py          - equal random split (control)
 │   ├── label_skew.py             - Dirichlet label-skew split and the EMD proxy
 │   └── quantity_skew.py          - log-normal quantity-skew split
@@ -96,8 +101,8 @@ hybrid-qfl-noniid/
 │   ├── eval_entanglement.py      - entanglement of the saved models, at the start and after training
 │   └── eval_noise.py             - gate noise and readout error test of the saved models
 ├── notebooks/
-│   ├── plot_baseline_{fashionmnist,mnist,pathmnist}.ipynb - data exploration, client splits, EMD, classical baseline
-│   ├── plot_results_{fashionmnist,mnist,pathmnist}.ipynb  - results tables, same-seed gains with p-values, figures
+│   ├── plot_baseline_{fashionmnist,mnist,pathmnist,cifar10}.ipynb - data exploration, client splits, EMD, classical baseline
+│   ├── plot_results_{fashionmnist,mnist,pathmnist,cifar10}.ipynb  - results tables, same-seed gains with p-values, figures
 │   └── plot_diagnostics.ipynb    - reproducibility, 50 rounds, lost classes, readout collapse, clients, shots, entanglement, noise
 ├── results/                      - tables, models, logs and plots (created by the runs, not in git)
 ├── Lit review/                   - the reference papers (PDF), numbered as in the report
@@ -113,7 +118,7 @@ pip install -r requirements.txt
 python verify_setup.py
 ```
 
-Tested with Python 3.14, PyTorch 2.14 (CPU), torchvision 0.29 and PennyLane 0.45.1. PathMNIST needs the `medmnist` package; `pip install medmnist --no-deps` is enough. Everything runs on a normal CPU.
+Tested with Python 3.14, PyTorch 2.14 (CPU), torchvision 0.29 and PennyLane 0.45.1. PathMNIST needs the `medmnist` package; `pip install medmnist --no-deps` is enough. Fashion-MNIST, MNIST and CIFAR-10 download through torchvision. Everything runs on a normal CPU.
 
 ## Running experiments
 
@@ -123,7 +128,7 @@ Run everything from the repository folder. One run:
 python experiments/run_qfl_fedavg.py --partition dirichlet --alpha 0.1 --rounds 20 --lr 0.003 --seed 42 --fixed_readout
 ```
 
-Readout options of `run_qfl_fedavg.py`: `--fixed_readout` (FCO), `--pauli_readout`, `--frozen_readout`, `--random_codes`, `--twin` (and `--twin --fixed_readout`). Every runner takes `--dataset {fashionmnist,mnist,pathmnist}`, `--clients`, `--rounds`, `--epochs`, `--batch_size`, `--lr`, `--partition {iid,dirichlet,quantity}`, `--alpha`, `--seed` and `--folder`.
+Readout options of `run_qfl_fedavg.py`: `--fixed_readout` (FCO), `--pauli_readout`, `--frozen_readout`, `--random_codes`, `--twin` (and `--twin --fixed_readout`). Every runner takes `--dataset {fashionmnist,mnist,pathmnist,cifar10}`, `--clients`, `--rounds`, `--epochs`, `--batch_size`, `--lr`, `--partition {iid,dirichlet,quantity}`, `--alpha`, `--seed` and `--folder`.
 
 Many runs at once (the setting of the paper; finished runs are skipped):
 
@@ -131,15 +136,17 @@ Many runs at once (the setting of the paper; finished runs are skipped):
 python experiments/run_grid.py --strategies fedavg fco twin --splits iid dir0.5 dir0.1 --seeds 42 43 44 45 46 47 48 49 --workers 3
 python experiments/run_grid.py --strategies classical --lr 0.001 --splits iid dir0.5 dir0.1 --seeds 42 43 44 --workers 3
 python experiments/run_grid.py --dataset mnist --strategies fedavg fco fedprox_full twin twin_fco --splits dir0.1 --seeds 42 43 44 45 46 --workers 3
+python experiments/run_grid.py --dataset cifar10 --strategies fedavg fco twin twin_fco --splits dir0.5 dir0.1 --seeds 42 43 44 45 46 --workers 3
 python experiments/run_grid.py --strategies fedavg fco --splits dir0.1 --clients 50 --seeds 42 43 44 45 46 --folder clients --workers 3
+python experiments/run_grid.py --strategies fedavg fco --splits dir0.1 --clients 100 --seeds 42 43 44 45 46 --folder clients --workers 3
 ```
 
 Grid strategies: `fedavg`, `fedprox`, `fedprox_full`, `weighted`, `logit_adjust`, `classical`, `fco`, `pauli`, `frozen`, `randcode`, `twin`, `twin_fco`. Splits: `iid` or `dirX` for Dirichlet α = X.
 
-Finite-shot evaluation of the saved models:
+Finite-shot evaluation of the saved models (`--repeats 5` draws the shots 5 times with different sampling seeds):
 
 ```bash
-python experiments/eval_shots.py --dataset fashionmnist
+python experiments/eval_shots.py --dataset fashionmnist --repeats 5
 ```
 
 Entanglement of the circuit states (Meyer-Wallach measure, measurement entropy, pair correlations) and test accuracy under gate noise and readout errors on PennyLane's density-matrix simulator `default.mixed`:
@@ -149,7 +156,7 @@ python experiments/eval_entanglement.py --dataset fashionmnist
 python experiments/eval_noise.py --dataset fashionmnist
 ```
 
-Every run writes a CSV to `results/tables/<folder>/` (test accuracy, loss, per-class accuracy, per-layer drift and agreement for every round, and the measured EMD) and its final model to `results/models/<folder>/`. Runs on MNIST and PathMNIST go to their own folders. The same seed gives the same client split, the same starting weights and the same data order, so every result can be repeated exactly. The notebooks read these folders and produce all tables and figures.
+Every run writes a CSV to `results/tables/<folder>/` (test accuracy, loss, per-class accuracy, per-layer drift and agreement for every round, and the measured EMD) and its final model to `results/models/<folder>/`. Runs on MNIST, PathMNIST and CIFAR-10 go to their own folders. The same seed gives the same client split, the same starting weights and the same data order, so every result can be repeated exactly. The notebooks read these folders and produce all tables and figures.
 
 ## References
 
